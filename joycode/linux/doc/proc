@@ -1,0 +1,107 @@
+1、proc根目录全局文件
+---------------------------------------------------------------
+acpi/
+asound/
+bus/
+driver/
+fs/
+irq/
+scsi/
+sys/: 管理员可对/proc/sys子目录中的许多文件内容进行修改以更改内核的运行特性
+sysvipc/
+tty/
+buddyinfo: 用于诊断伙伴系统内存碎片问题的相关信息(cat)，可用空间=n*2^row*PAGE_SIZE(n为某一个数，row为这个数所在的列，从左向右，以0开始)
+cgroups
+cmdline: bootloader在启动时传递至内核的相关参数信息(cat)
+consoles
+cpuinfo: 处理器的相关信息(cat)
+crypto: 系统上已安装的内核使用的密码算法及每个算法的详细信息(cat)
+devices: 系统已经加载的所有块设备和字符设备的信息(cat)
+diskstats: 每块磁盘设备的磁盘I/O统计信息列表(cat)
+dma: 每个正在使用且注册的ISA DMA通道的信息(cat)
+execdomains: 内核当前支持的执行域(cat)
+fb: 帧缓冲设备列表文件，包含帧缓冲设备的设备号和相关驱动信息(cat)
+filesystems: 当前被内核支持的文件系统类型列表文件(cat)
+interrupts: X86或X86_64体系架构系统上每个IRQ相关的中断号列表(cat)
+iomem: 每个物理设备上的记忆体（RAM或者ROM）在系统内存中的映射信息(cat)
+ioports: 当前正在使用且已经注册过的与物理设备进行通讯的输入-输出端口范围信息(cat)
+kallsyms: 模块管理工具用来动态链接或绑定可装载模块的符号定义，由内核输出(cat)
+kcore: 系统使用的物理内存，以ELF核心文件（core file）格式存储，其文件大小为已使用的物理内存（RAM）加上4KB；这个文件用来检查内核数据结构的当前状态，因此，通常由GBD调试工具使用，但不能使用文件查看命令打开此文件
+key-users
+kmsg: 此文件用来保存由内核输出的信息，通常由/sbin/klogd或/bin/dmsg等程序使用，不要试图使用查看命令打开此文件
+kpagecount
+kpageflags
+latency_stats
+loadavg: 保存关于CPU和磁盘I/O的负载平均值，其前三列分别表示每1秒钟、每5秒钟及每15秒的负载平均值，类似于uptime命令输出的相关信息(uptime)
+locks: 保存当前由内核锁定的文件的相关信息，包含内核内部的调试数据(cat)
+mdstat: 保存RAID(独立冗余磁盘阵列)相关的多块磁盘的当前状态信息(cat)
+meminfo: 系统中关于当前内存的利用状况等的信息(cat)
+misc
+modules: 当前装入内核的所有模块名称列表，可以由lsmod命令使用，也可以直接查看(cat)
+mounts: 指向/proc/self/mounts（每个进程自身挂载名称空间中的所有挂载点列表）文件的符号链接(cat)
+mtrr
+net
+pagetypeinfo
+partitions: 块设备每个分区的主设备号（major）和次设备号（minor）等信息(cat)
+sched_debug
+schedstat
+self
+slabinfo: 在内核中频繁使用的对象（如inode、dentry等）都有自己的cache，即slab pool，而/proc/slabinfo文件列出了这些对象相关slap的信息；详情可以参见内核文档中slapinfo的手册页
+softirqs
+stat: 实时追踪自系统上次启动以来的多种统计信息，可读性很差(cat)
+swaps: 当前系统上的交换分区及其空间利用信息，如果有多个交换分区的话，则会每个交换分区的信息分别存储于/proc/swap目录中的单独文件中，而其优先级数字越低，被使用到的可能性越大(cat)
+sysrq-trigger
+timer_list
+timer_stats
+uptime: 系统上次启动以来的运行时间(cat)
+version: 当前系统运行的内核版本号(cat)
+version_signature
+vmallocinfo
+vmstat: 当前系统虚拟内存的多种统计数据(cat)
+zoneinfo: 内存区域（zone）的详细信息列表(cat)
+
+2、proc进程目录文件
+---------------------------------------------------------------
+attr/
+fd/: 包含当前进程打开的每一个文件的文件描述符(ls -l)
+fdinfo/
+net/
+ns/
+task/: 包含由当前进程所运行的每一个线程的相关信息
+autogroup
+auxv
+cgroup
+clear_refs
+cmdline: 启动当前进程的完整命令(cat)
+comm
+coredump_filter
+cpuset
+cwd: 指向当前进程运行目录的一个符号链接(ls)
+environ: 当前进程的环境变量列表(cat)
+exe: 指向启动当前进程的可执行文件(ls -l)
+io
+latency
+limits:当前进程所使用的每一个受限资源的软限制、硬限制和管理单元(cat)
+loginuid
+maps: 当前进程关联的二进制文件(可执行文件、库文件)在内存的映射区域及访问权限(cat)
+mem: 当前进程所占用的内存空间(程序读取：open, read, seek)
+mountinfo
+mounts
+mountstats
+numa_maps
+oom_adj
+oom_score
+oom_score_adj
+pagemap
+personality
+root: 指向当前进程运行根目录的符号链接(ls)
+sched
+schedstat
+sessionid
+smaps
+stack
+stat: 当前进程的状态信息(ps)
+statm: 当前进程占用内存的状态信息，以页（通常为4KB）为单位(top)
+status: 包含stat和statm的部分重要信息，可读性较好(cat)
+syscall
+wchan

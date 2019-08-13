@@ -1,0 +1,33 @@
+add: 将文件纳入版本管理库
+blame (praise, annotate, ann)
+cat: 查看版本库中的文件，但不检出
+changelist (cl)
+checkout (co): 从指定版本库中检出最新代码
+cleanup
+commit (ci): 提交最新代码
+copy (cp)
+delete (del, remove, rm): 删除版本库中的文件
+diff (di): 比较两个版本之间的区别
+export: 导出一个内有版本管理的“纯净”代码
+help (?, h): 查看帮助
+import
+info: 查看文件的信息
+list (ls): 类似shell的ls，区别为只显示纳入版本控制的文件
+lock
+log: 查看版本库的变更日志
+merge
+mergeinfo
+mkdir; 创建新的目录并纳入版本库
+move (mv, rename, ren)
+propdel (pdel, pd)
+propedit (pedit, pe)
+propget (pget, pg)
+proplist (plist, pl)
+propset (pset, ps)
+resolve: -accept base(版本倒退，谁的也不用)|mine-full(用我的)|theirs-full(用他的)|working(指定手动改的)
+resolved: 冲突以解决，修改文件状态C为M，并删除冲突文件(与resolve --accept working PATH 一样)
+revert
+status (stat, st): 查看当全文件的状态
+switch (sw): 把工作拷贝更新到别的URL
+unlock
+update (up): 更新当前版本库，获取最新代码

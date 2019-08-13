@@ -1,0 +1,114 @@
+add: 将文件提交到缓存
+difftool
+rebase
+am
+fetch: 抓取远程仓库的数据到本地(不merge)
+reflog
+annotate
+filter-branch
+relink
+apply: 
+	-R:
+format-patch
+remote: 操作远程仓库
+	-v: 显示远程仓库的URL
+	add [shortname] [url]: 添加远程仓库
+	show [remote-name]: 显示远程仓库的信息
+	rename: 修改远程仓库在本地的命名
+	rm: 删除远程仓库
+archive
+fsck
+repack
+bisect
+gc
+replace
+blame: 文件标注
+	blame -L m,n <file>: 查看该文件的第m至第n行都由哪些人做过哪些修改
+get-tar-commit-id
+request-pull
+branch: 建立新的分支
+	-d: 删除指定分支
+	-D: 强行删除指定分支
+	-v: 查看每个分支最新的记录
+	--merge: 筛选出已经与当前分支合并的分支
+	--no-merged: 查看尚未合并的工作
+grep
+reset: 取消暂存结果
+	reset HEAD <file>: 取消当前暂存结果
+bundle
+help
+revert
+checkout: 切换分支，取消修改
+	checkout -- <file>: 取消本地修改
+	-b: 建立并切换分支(相当于干了branch的活)
+imap-send
+rm: 将文件从版本库中删除，同时删除本地文件
+	-f: 如果该文件已经被放入缓存中，需要强制删除
+	--cached: 只删除版本库中对文件的管理，保留本地文件
+cherry
+init: 建立本地git版本库
+shortlog
+cherry-pick
+instaweb
+show: 查看相应的标签版本信息
+clean
+log: 显示日志
+	-(n): 仅显示最近的 n 条提交
+	-p: 显示详细修改过程，可以指定n，只显示最近的n条
+	--oneline: 一行紧凑格式
+	--stat: 显示每个版本改动的行数统计
+	--shortstat: 只显示 --stat 中最后的行数修改添加移除统计
+	--name-status: 显示新增、修改、删除的文件清单
+	--abbrev-commit: 仅显示 SHA-1 的前几个字符，而非所有的 40 个字符
+	--relative-date: 使用较短的相对时间显示（比如: "2 weeks ago"）
+	--graph: 显示 ASCII 图形表示的分支合并历史
+	--pretty: 非常强大的参数，用于指定显示格式(例如:oneline,short,full,fuller,format等)
+	--since(--after): 过滤显示从那天开始(例如: --since=2.weeks) 
+	--until(--before): 过滤显示到那天结束(例如: --since=2.weeks) 
+	--author: 过滤指定作者
+	--committer: 过滤指定提交者
+	--grep: 过滤关键字
+	--all-match: 当有多条过滤规则时，指定且逻辑，默认为或逻辑
+show-branch
+clone
+merge: 合并分支并生成新版本
+	merge [branch-name]: 将指定分支合并到当前分支，并提交新版本
+	--squash: 合并但不提交新版本
+stage
+commit: 将缓存提交到版本库
+	-a: 将本地数据直接提交到版本库（跳过缓存）
+	--amend: 将最后一次版本重提交，不建立新版本
+mergetool: 使用处理冲突的工具解决冲突
+stash: 储存当前工作（相当于备份）
+	stash list: 查看所有备份
+	stash apply: 恢复最新一次的备份
+	stash apply stash@{2}: 恢复标记为2的备份
+	stash drop: 移除指定名字的存git 储
+	stash pop: 应用最新备份并将其从栈中移除
+	stash show -p: 查看备份的改动
+	--index: 回复本地文件的同时，恢复缓存
+config
+mv; 移动文件
+status: 查看当前状态
+	-s: 显示短格式
+credential-cache
+name-rev
+submodule
+credential-store
+notes
+tag: 列出已有标签
+	tag [name]: 直接给出标签名，表示加入一个轻量级标签
+	-l: 列出符合条件的标签(通配符)
+	-a [tag-name] [id]: 新建标签，可以指定id，也默认使用当前版本
+	-m: 写入标签的说明
+	-s: 使用密钥签署标签
+	-v: 验证已经签署的标签
+describe
+pull: 抓取远程仓库的数据并与本地数据merge
+whatchanged
+diff: 查看当前状态和缓存状态的区别
+	--cached: 查看缓存与最新版本库的区别
+push: 推出数据到远程仓库
+	push [remote-name] [branch-name]: 推送指定分支
+	push [remote-name] [tag-name]: 推送指定标签
+	push [remote-name] --tags: 推送所有标签
