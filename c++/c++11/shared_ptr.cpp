@@ -114,6 +114,16 @@ int main(int argc, char *argv[])
 	std::cout << "return is " << *pr1 << std::endl;	// read ok
 	std::cout << "return is " << *pr2 << std::endl;	// invalid read
 
+	// shared_ptr自定义deleter的用法
+	// shared_ptr的deleter定义相比unique_ptr要容易的多
+	// 不需要考虑指定模版类型，直接在参数中指定函数就够了
+	// shared_ptr和unique_ptr在定义deleter之间存在区别的原因，详见：
+	// https://www.cnblogs.com/fuzhe1989/p/7763623.html
+	std::shared_ptr<int> del_p(new int, [](int *p){
+			std::cout << "delete by lambda" << std::endl;
+			delete p;
+			});
+
 	return EXIT_SUCCESS;
 }				// ----------  end of function main  ----------
 
