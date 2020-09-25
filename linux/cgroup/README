@@ -1,0 +1,6 @@
+cpu测试：
+在/cgroup/cpu子系统中创建test目录用于测试
+echo 100000 > cpu.cfs_period_us
+echo 50000  > cpu.cfs_quota_us
+echo ${PID} > tasks
+
