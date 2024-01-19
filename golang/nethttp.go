@@ -35,6 +35,8 @@ func new_standard_http_server(port int) *http.Server {
 	mymux.HandleFunc("/", handler)
 
 	var handler_wrap = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 注意：如果这里使用fmt.Fprint对w录入数据，会导致w的其他信息也被赋值（例如StatusCode）
+		//       且后续的mymux.ServeHTTP无法对这些信息进行覆盖，这将会导致出现一些反直觉的现象
 		fmt.Println("[Pre Request]")
 		mymux.ServeHTTP(w, r)
 		fmt.Println("[Post Request]")
@@ -75,15 +77,17 @@ func client_get(host string, port int, path string) {
 	var url = fmt.Sprintf("http://%s:%d/%s", host, port, path)
 	if resp, err := http.Get(url); err == nil {
 		if body, err := ioutil.ReadAll(resp.Body); err == nil {
-			fmt.Println("resp: ", string(body))
+			fmt.Println("StatusCode: ", resp.StatusCode)
+			fmt.Println("Response: ", string(body))
+			fmt.Println("Error", err)
 		}
 	}
 }
 
 func main() {
-	// // Simple Server用法
-	// go start_simple_http_server(8080)
-	// client_get("localhost", 8080, "/")
+	// Simple Server用法
+	go start_simple_http_server(8080)
+	client_get("localhost", 8080, "/")
 
 	// Standard Server用法
 	var srv = new_standard_http_server(8081)
