@@ -10,12 +10,19 @@ import (
 	"time"
 )
 
+type cls struct{}
+
+func (c cls) cls_handler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Member Function: Requested path is %s", r.URL.Path)
+}
+
 // 最简单的启动方法，使用默认路由，且无法主动退出
 func start_simple_http_server(port int) error {
 	// 此处的Multiplexer隐式注册在全局的defaultServeMux中（可以通过http.DefaultServeMux访问到）
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Simple Server: Requested path is %s", r.URL.Path)
 	})
+	http.HandleFunc("/cls", cls{}.cls_handler)
 	fmt.Println("resp: ", http.DefaultServeMux)
 
 	var err error = nil
@@ -35,6 +42,7 @@ func new_standard_http_server(port int) *http.Server {
 	//       所以，根目录"/"会兜底一切未注册路由，这种做法虽然提升了容错性，但极不安全
 	var mymux = http.NewServeMux()
 	mymux.HandleFunc("/", handler)
+	mymux.HandleFunc("/cls", cls{}.cls_handler)
 
 	var handler_wrap = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 注意：ResponseWriter的Write方法，会自动对空StatusCode赋值为http.StatusOK，非空则不覆盖
@@ -92,10 +100,12 @@ func main() {
 	// Simple Server用法
 	go start_simple_http_server(8080)
 	client_get("localhost", 8080, "/")
+	client_get("localhost", 8080, "/cls")
 
 	// Standard Server用法
 	var srv = new_standard_http_server(8081)
 	go start_standard_http_server(srv)
 	client_get("localhost", 8081, "/")
+	client_get("localhost", 8081, "/cls")
 	stop_standard_http_server(srv)
 }
