@@ -11,7 +11,7 @@ import (
 func new_standard_http_server() *fasthttp.Server {
 
 	var handler = func(ctx *fasthttp.RequestCtx) {
-		fmt.Fprintf(ctx, "hello")
+		fmt.Fprintf(ctx, "Standard Server: Requested path is %q", ctx.Path())
 	}
 
 	// var handler_wrap = func(ctx *fasthttp.RequestCtx) {
@@ -37,11 +37,12 @@ func start_standard_http_server(srv *fasthttp.Server, addr string) {
 }
 
 func stop_standard_http_server(srv *fasthttp.Server) {
+	srv.Shutdown()
 }
 
 func run_simple_http_server(addr string) {
 	requestHandler := func(ctx *fasthttp.RequestCtx) {
-		fmt.Fprintf(ctx, "Hello, world! Requested path is %q", ctx.Path())
+		fmt.Fprintf(ctx, "Simple Server: Requested path is %q", ctx.Path())
 	}
 
 	if err := fasthttp.ListenAndServe(addr, requestHandler); err != nil {
@@ -58,8 +59,8 @@ func client_get(host string, port int, path string) {
 }
 
 func main() {
-	go run_simple_http_server(":8080")
-	client_get("localhost", 8080, "/")
+	// go run_simple_http_server(":8080")
+	// client_get("localhost", 8080, "/")
 
 	var srv = new_standard_http_server()
 	go start_standard_http_server(srv, ":8081")
