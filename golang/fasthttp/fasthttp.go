@@ -66,8 +66,8 @@ func client_get(host string, port int, path string) {
 }
 
 func main() {
-	// go run_simple_http_server(":8080")
-	// client_get("localhost", 8080, "/")
+	go run_simple_http_server(":8080")
+	client_get("localhost", 8080, "/")
 
 	var srv = new_standard_http_server()
 	go start_standard_http_server(srv, ":8081")
