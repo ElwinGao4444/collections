@@ -16,5 +16,5 @@ cc getopt.c
 
 ./a.out -a 1 -b2 -c	# 选项的组合使用
 
-rm a.out
+rm ./a.out
 
