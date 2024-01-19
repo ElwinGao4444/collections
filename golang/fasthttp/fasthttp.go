@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/fasthttp/router"
 	"github.com/valyala/fasthttp"
 )
 
@@ -14,14 +15,20 @@ func new_standard_http_server() *fasthttp.Server {
 		fmt.Fprintf(ctx, "Standard Server: Requested path is %q", ctx.Path())
 	}
 
-	// var handler_wrap = func(ctx *fasthttp.RequestCtx) {
-	// 	fmt.Println("[Pre Request]")
-	// 	ctx.SetStatusCode(fasthttp.StatusNotFound)
-	// 	fmt.Println("[Post Request]")
-	// }
+	r := router.New()
+	r.GET("/", handler)
+
+	var handler_wrap = func(ctx *fasthttp.RequestCtx) {
+		fmt.Println("[Pre Request]")
+		ctx.WriteString("[Pre Request]")
+		r.Handler(ctx)
+		ctx.WriteString("[Pre Request]")
+		fmt.Println("[Post Request]")
+		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
+	}
 
 	server := &fasthttp.Server{
-		Handler:      handler,
+		Handler:      handler_wrap,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		Concurrency:  1024,
