@@ -8,18 +8,18 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-func handler_wrap(ctx *fasthttp.RequestCtx) {
-	fmt.Println("[Pre Request]")
-	ctx.SetStatusCode(fasthttp.StatusNotFound)
-	fmt.Println("[Post Request]")
-}
+func new_standard_http_server() *fasthttp.Server {
 
-func handler(ctx *fasthttp.RequestCtx) {
-	fmt.Fprintf(ctx, "hello")
-	ctx.SetStatusCode(fasthttp.StatusNotFound)
-}
+	var handler = func(ctx *fasthttp.RequestCtx) {
+		fmt.Fprintf(ctx, "hello")
+	}
 
-func run_simple_http_server2() {
+	// var handler_wrap = func(ctx *fasthttp.RequestCtx) {
+	// 	fmt.Println("[Pre Request]")
+	// 	ctx.SetStatusCode(fasthttp.StatusNotFound)
+	// 	fmt.Println("[Post Request]")
+	// }
+
 	server := &fasthttp.Server{
 		Handler:      handler,
 		ReadTimeout:  10 * time.Second,
@@ -27,8 +27,16 @@ func run_simple_http_server2() {
 		Concurrency:  1024,
 	}
 
-	go server.ListenAndServe(":8080")
+	return server
+}
 
+func start_standard_http_server(srv *fasthttp.Server, addr string) {
+	if err := srv.ListenAndServe(addr); err != nil {
+		log.Fatalf("error in ListenAndServe: %v", err)
+	}
+}
+
+func stop_standard_http_server(srv *fasthttp.Server) {
 }
 
 func run_simple_http_server(addr string) {
@@ -52,4 +60,9 @@ func client_get(host string, port int, path string) {
 func main() {
 	go run_simple_http_server(":8080")
 	client_get("localhost", 8080, "/")
+
+	var srv = new_standard_http_server()
+	go start_standard_http_server(srv, ":8081")
+	client_get("localhost", 8081, "/")
+	stop_standard_http_server(srv)
 }

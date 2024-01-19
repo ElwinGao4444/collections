@@ -14,7 +14,7 @@ import (
 func start_simple_http_server(port int) error {
 	// 此处的Multiplexer隐式注册在全局的defaultServeMux中（可以通过http.DefaultServeMux访问到）
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "Simple Server")
+		fmt.Fprintf(w, "Simple Server: Requested path is %s", r.URL.Path)
 	})
 	fmt.Println("resp: ", http.DefaultServeMux)
 
@@ -28,9 +28,11 @@ func start_simple_http_server(port int) error {
 
 func new_standard_http_server(port int) *http.Server {
 	var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "Standard Server")
+		fmt.Fprintf(w, "Standard Server: Requested path is %s", r.URL.Path)
 	})
 
+	// 注意：ServeMux的处理流程，并不是完全严格匹配，而是当匹配失败时，会使用最长前缀匹配
+	//       所以，根目录"/"会兜底一切未注册路由，这种做法虽然提升了容错性，但极不安全
 	var mymux = http.NewServeMux()
 	mymux.HandleFunc("/", handler)
 
