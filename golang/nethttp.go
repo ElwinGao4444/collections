@@ -35,11 +35,13 @@ func new_standard_http_server(port int) *http.Server {
 	mymux.HandleFunc("/", handler)
 
 	var handler_wrap = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 注意：如果这里使用fmt.Fprint对w录入数据，会导致w的其他信息也被赋值（例如StatusCode）
-		//       且后续的mymux.ServeHTTP无法对这些信息进行覆盖，这将会导致出现一些反直觉的现象
+		// 注意：ResponseWriter的Write方法，会自动对空StatusCode赋值为http.StatusOK，非空则不覆盖
+		//       详见http.ResponseWriter接口中Write方法的注释
 		fmt.Println("[Pre Request]")
+		// w.Write([]byte("[Pre Request]"))	// 首次写入会StatusCode 200，导致mymux.ServeHTTP无法正确写入StatusCode
 		mymux.ServeHTTP(w, r)
 		fmt.Println("[Post Request]")
+		w.Write([]byte("[Post Request]")) // mymux.ServeHTTP已经写入了StatusCode，此处追加信息，不会覆盖StatusCode
 	})
 
 	var mysrv = &http.Server{
