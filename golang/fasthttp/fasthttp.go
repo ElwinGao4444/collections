@@ -9,6 +9,12 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+type cls struct{}
+
+func (c cls) cls_handler(ctx *fasthttp.RequestCtx) {
+	fmt.Fprintf(ctx, "Member Function: Requested path is %q", ctx.Path())
+}
+
 func new_standard_http_server() *fasthttp.Server {
 
 	var handler = func(ctx *fasthttp.RequestCtx) {
@@ -17,6 +23,7 @@ func new_standard_http_server() *fasthttp.Server {
 
 	r := router.New()
 	r.GET("/", handler)
+	r.GET("/cls", cls{}.cls_handler)
 
 	var handler_wrap = func(ctx *fasthttp.RequestCtx) {
 		fmt.Println("[Pre Request]")
@@ -72,5 +79,6 @@ func main() {
 	var srv = new_standard_http_server()
 	go start_standard_http_server(srv, ":8081")
 	client_get("localhost", 8081, "/")
+	client_get("localhost", 8081, "/cls")
 	stop_standard_http_server(srv)
 }
