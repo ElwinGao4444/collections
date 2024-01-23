@@ -21,18 +21,29 @@ func new_standard_http_server() *fasthttp.Server {
 		fmt.Fprintf(ctx, "Standard Server: Requested path is %q", ctx.Path())
 	}
 
-	r := router.New()
-	r.GET("/", handler)
-	r.GET("/cls", cls{}.cls_handler)
+	router := router.New()
+	router.GET("/", handler)
+	router.GET("/cls", cls{}.cls_handler)
 	// 此处可以自定义任何NotFound的行为
-	r.NotFound = fasthttp.FSHandler("./", 0) // 这个例子是作为静态页展示，使用BodyStream缓存
+	router.NotFound = fasthttp.FSHandler("./", 0) // 这个例子是作为静态页展示，使用BodyStream缓存
+
+	var h fasthttp.RequestHandler
+	var r bool
+	h, r = router.Lookup("GET", "/", nil)
+	fmt.Println("lookup GET /: ", h, r)
+	h, r = router.Lookup("GET", "/cls", nil)
+	fmt.Println("lookup GET /cls: ", h, r)
+	h, r = router.Lookup("GET", "//", nil)
+	fmt.Println("lookup GET //: ", h, r)
+	h, r = router.Lookup("GET", "/cls/", nil)
+	fmt.Println("lookup GET /cls/: ", h, r)
 
 	// 注意：fasthttp中有两个Body缓存，一个叫BodyBuffer，一个叫BodyStream
 	// 这两个Body缓存是互斥的，使用一个的时候，会先强制清空另一个，从而导致“数据丢失”的现象
 	var handler_wrap = func(ctx *fasthttp.RequestCtx) {
 		fmt.Println("[Pre Request]")
 		ctx.WriteString("[Pre Request]") // 使用BodyBuffer缓存
-		r.Handler(ctx)
+		router.Handler(ctx)
 		fmt.Println("[Post Request]")
 		ctx.WriteString("[Post Request]") // 使用BodyBuffer缓存
 
