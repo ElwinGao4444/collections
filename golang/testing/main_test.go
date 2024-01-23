@@ -20,7 +20,7 @@ func TestAssert(t *testing.T) {
 
 // go test -v -run TestConvey main_test.go
 func TestConvey(t *testing.T) {
-	convey.Convey("TestIsAdxReqeust", t, func() {
+	convey.Convey("TestConvey", t, func() {
 		convey.So(123, convey.ShouldEqual, 123)
 	})
 }
