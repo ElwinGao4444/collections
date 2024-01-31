@@ -3,6 +3,7 @@ package main
 // 启动方式：protoc --go_out=. message.proto && go run main.go message.pb.go
 
 import (
+	"encoding/json"
 	"log"
 
 	pb "google.golang.org/protobuf/proto"
@@ -16,6 +17,12 @@ func use_simple_persion() {
 
 	// 定义一个结构体
 	old_obj = &SimplePerson{Name: "foo", Male: true, Scores: []int32{60, 70, 80}}
+
+	// 使用json序列化
+	if data, err = json.Marshal(old_obj); err != nil {
+		log.Fatal("json marshaling error: ", err)
+	}
+	log.Println("Json Marshal: ", string(data))
 
 	// 使用pb序列化
 	if data, err = pb.Marshal(old_obj); err != nil {
@@ -49,6 +56,12 @@ func use_complex_persion() {
 			{Number: "555-4321", Type: PhoneType_PHONE_TYPE_HOME},
 		},
 	}
+
+	// 使用json序列化
+	if data, err = json.Marshal(old_obj); err != nil {
+		log.Fatal("json marshaling error: ", err)
+	}
+	log.Println("Json Marshal: ", string(data))
 
 	// 使用pb序列化
 	if data, err = pb.Marshal(old_obj); err != nil {
