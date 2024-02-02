@@ -65,7 +65,7 @@ func main() {
 	use_cancel_context()
 
 	// context的基本读写方法
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background()) // context.Background()可以看作空context
 	defer cancel()
 	ctx1 := context.WithValue(ctx, "k1", "v1")  // context.WithValue会基于参数创建新context
 	ctx2 := context.WithValue(ctx1, "k2", "v2") // 而并不会在原有context上进行追加
