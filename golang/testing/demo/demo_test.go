@@ -11,8 +11,8 @@ import (
 // go test -v -run TestHelloWorld main_test.go
 func TestHelloWorld(t *testing.T) {
 	t.Log("ok")
-	t.Error("error") // 报错但不退出
-	t.Fatal("fatal") // 报错并且退出
+	// t.Error("error") // 报错但不退出
+	// t.Fatal("fatal") // 报错并且退出
 }
 
 // Assert库的用法

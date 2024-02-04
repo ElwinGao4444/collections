@@ -1,16 +1,25 @@
 package demo
 
+// 接口定义
 type Inter interface {
 	Foo(int) error
-	Bar(string) error
 }
 
+// 驱动类
+type User struct {
+	Inter Inter
+}
+
+// 接口调用
+func (user *User) Use() error {
+	return user.Inter.Foo(0)
+}
+
+// 多接口定义，用于说明GoMock的两种使用模式
 type Inter2 interface {
-	Foo2(int) error
-	Bar2(string) error
+	Foo2(bool) error
 }
 
 type Inter3 interface {
-	Foo3(int) error
-	Bar3(string) error
+	Foo3(string) error
 }

@@ -1,6 +1,10 @@
 package demo
 
-import "testing"
+import (
+	"testing"
+
+	gomock "github.com/golang/mock/gomock"
+)
 
 // 原生GoMock用法
 //
@@ -18,4 +22,17 @@ import "testing"
 // 模式2：接口模式，Mock指定路径下指定的接口
 // mockgen -package=demo . Inter > ./demo_mock.go
 func TestGoMockSourceMode(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	// 先设置期望的返回结果
+	mockInter := NewMockInter(mockCtrl)
+	mockInter.EXPECT().Foo(0).Return(nil).Times(1)
+
+	// 再调用方法
+	testUser := &User{Inter: mockInter}
+	err := testUser.Use()
+	if err != nil {
+		t.Errorf("result = %v", err)
+	}
 }
