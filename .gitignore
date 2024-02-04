@@ -4,3 +4,4 @@
 **/a.out.dSYM/
 **/.DS_Store
 **/*.pb.go
+**/*_mock.go
