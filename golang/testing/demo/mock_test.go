@@ -100,7 +100,8 @@ func TestGoMock(t *testing.T) {
 //
 // 在MaxOS m1芯片上，需要增加环境变量：GOARCH=amd64
 // 一般需要在编译参数上，增加"-gcflags=-l"，禁止内联优化
-func TestBouKeMonkey(t *testing.T) {
+// 执行方法：GOARCH=amd64 go test -gcflags=-l -v -run TestGoMonkey
+func TestGoMonkey(t *testing.T) {
 	// 对指定函数进行Mock
 	monkey.Patch(bar, func(n int) int {
 		return n + 2
