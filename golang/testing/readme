@@ -1,6 +1,7 @@
 注意：
 
 1. go test无法直接对package为main的包执行
+   相关解释：https://blog.csdn.net/bigwhite20xx/article/details/130050899
 
 2. 由于demo中的第三方monkey库，只能在x86架构下使用，所以想在demo目录下执行go test，必须添加环境变量GOARCH=amd64，且禁止内连
    完整命令为：GOARCH=amd64 go test -gcflags=-l
