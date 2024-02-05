@@ -8,7 +8,7 @@ import (
 )
 
 // 原生Testing用法
-// go test -v -run TestHelloWorld main_test.go
+// go test -v -run TestHelloWorld
 func TestHelloWorld(t *testing.T) {
 	t.Log("ok")
 	// t.Error("error") // 报错但不退出
@@ -16,13 +16,13 @@ func TestHelloWorld(t *testing.T) {
 }
 
 // Assert库的用法
-// go test -v -run TestAssert main_test.go
+// go test -v -run TestAssert
 func TestAssert(t *testing.T) {
 	assert.Equal(t, 123, 123, "they should be equal")
 }
 
 // Convey库的用法
-// go test -v -run TestConvey main_test.go
+// go test -v -run TestConvey
 func TestConvey(t *testing.T) {
 	convey.Convey("TestConvey", t, func() {
 		convey.So(123, convey.ShouldEqual, 123)
