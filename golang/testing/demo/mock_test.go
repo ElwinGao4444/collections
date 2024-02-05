@@ -21,7 +21,7 @@ import (
 // mockgen -source=./demo.go -destination=./demo_mock.go -package=demo
 // 模式2：接口模式，Mock指定路径下指定的接口
 // mockgen -package=demo . Inter > ./demo.mock && mv ./demo.mock ./demo_mock.go
-func TestGoMockSourceMode(t *testing.T) {
+func TestGoMock(t *testing.T) {
 	// mock控制器初始化
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -34,7 +34,7 @@ func TestGoMockSourceMode(t *testing.T) {
 	mockInter.EXPECT().Foo(0).Return(1).Times(1)
 	mockInter.EXPECT().Bar(0).Return(2).Times(1)
 	testUser = &User{Inter: mockInter}
-	if n := testUser.Use(); n != 3 {
+	if n := testUser.Use(0, 0); n != 3 {
 		t.Errorf("result = %v", n)
 	}
 
@@ -43,7 +43,7 @@ func TestGoMockSourceMode(t *testing.T) {
 	mockInter.EXPECT().Foo(gomock.Any()).Return(1).AnyTimes()
 	mockInter.EXPECT().Bar(gomock.Any()).Return(2).AnyTimes()
 	testUser = &User{Inter: mockInter}
-	if n := testUser.Use(); n != 3 {
+	if n := testUser.Use(0, 0); n != 3 {
 		t.Errorf("result = %v", n)
 	}
 
@@ -54,10 +54,10 @@ func TestGoMockSourceMode(t *testing.T) {
 	mockInter.EXPECT().Foo(gomock.Any()).Return(3).Times(1).After(c1)
 	mockInter.EXPECT().Bar(gomock.Any()).Return(4).Times(1).After(c2)
 	testUser = &User{Inter: mockInter}
-	if n := testUser.Use(); n != 3 {
+	if n := testUser.Use(0, 0); n != 3 {
 		t.Errorf("result = %v", n)
 	}
-	if n := testUser.Use(); n != 7 {
+	if n := testUser.Use(0, 0); n != 7 {
 		t.Errorf("result = %v", n)
 	}
 
@@ -70,10 +70,10 @@ func TestGoMockSourceMode(t *testing.T) {
 		mockInter.EXPECT().Bar(gomock.Any()).Return(4).Times(1),
 	)
 	testUser = &User{Inter: mockInter}
-	if n := testUser.Use(); n != 3 {
+	if n := testUser.Use(0, 0); n != 3 {
 		t.Errorf("result = %v", n)
 	}
-	if n := testUser.Use(); n != 7 {
+	if n := testUser.Use(0, 0); n != 7 {
 		t.Errorf("result = %v", n)
 	}
 
@@ -82,7 +82,7 @@ func TestGoMockSourceMode(t *testing.T) {
 	mockInter.EXPECT().Foo(gomock.Any()).DoAndReturn(func(n int) int { return n + 10 })
 	mockInter.EXPECT().Bar(gomock.Any()).DoAndReturn(func(n int) int { return n + 100 })
 	testUser = &User{Inter: mockInter}
-	if n := testUser.Use(); n != 110 {
+	if n := testUser.Use(0, 0); n != 110 {
 		t.Errorf("result = %v", n)
 	}
 }

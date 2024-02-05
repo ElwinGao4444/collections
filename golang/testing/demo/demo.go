@@ -12,8 +12,20 @@ type User struct {
 }
 
 // 接口调用
-func (user *User) Use() int {
-	return user.Inter.Foo(0) + user.Inter.Bar(0)
+func (user *User) Use(x, y int) int {
+	return user.Inter.Foo(x) + user.Inter.Bar(y)
+}
+
+func (user *User) Handle(n int) int {
+	return n
+}
+
+func bar(n int) int {
+	return n + 1
+}
+
+func foo(n int) int {
+	return bar(n)
 }
 
 // 多接口定义，用于说明GoMock的两种使用模式
