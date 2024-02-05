@@ -1,12 +1,16 @@
 package demo
 
 import (
+	reflect "reflect"
 	"testing"
 
+	"bou.ke/monkey"
 	gomock "github.com/golang/mock/gomock"
 )
 
+// ****************************************************************
 // 原生GoMock用法
+// ****************************************************************
 //
 // GoMock安装
 // go get -u github.com/golang/mock/gomock
@@ -83,6 +87,35 @@ func TestGoMock(t *testing.T) {
 	mockInter.EXPECT().Bar(gomock.Any()).DoAndReturn(func(n int) int { return n + 100 })
 	testUser = &User{Inter: mockInter}
 	if n := testUser.Use(0, 0); n != 110 {
+		t.Errorf("result = %v", n)
+	}
+}
+
+// ****************************************************************
+// 第三方GoMonkey用法
+// ****************************************************************
+//
+// GoMonkey安装
+// go get bou.ke/monkey
+//
+// 在MaxOS m1芯片上，需要增加环境变量：GOARCH=amd64
+// 一般需要在编译参数上，增加"-gcflags=-l"，禁止内联优化
+func TestBouKeMonkey(t *testing.T) {
+	// 对指定函数进行Mock
+	monkey.Patch(bar, func(n int) int {
+		return n + 2
+	})
+
+	if n := foo(1); n != 3 {
+		t.Errorf("result = %v", n)
+	}
+
+	// 对成员方法进行Mock
+	var testUser = &User{}
+	monkey.PatchInstanceMethod(reflect.TypeOf(testUser), "Handle", func(_ *User, n int) int {
+		return n + 1
+	})
+	if n := testUser.Handle(0); n != 1 {
 		t.Errorf("result = %v", n)
 	}
 }
