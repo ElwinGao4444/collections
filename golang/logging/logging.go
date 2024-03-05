@@ -4,11 +4,14 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	"log/slog"
 	"os"
+
+	"github.com/golang/glog"
 )
 
 // 原生log库，功能非常弱，通常只能用于极小的项目，或是调试性的使用
@@ -49,6 +52,30 @@ func use_log() {
 	writer3, _ := os.OpenFile("tmp.log", os.O_WRONLY|os.O_CREATE, 0640)
 	logger = log.New(io.MultiWriter(writer1, writer2, writer3), "", log.Lshortfile|log.LstdFlags)
 	logger.Println("log in multi-output")
+}
+
+func use_glog() {
+	// mkdir log
+	// go run logging.go -log_dir=log -alsologtostderr
+	flag.Parse()
+	defer glog.Flush() // 退出前执行，清空缓存区，将日志写入文件
+
+	// Info日志
+	glog.Info("This is info message")
+	glog.Infof("This is info message: %v", 12345)
+	glog.InfoDepth(1, "This is info message", 12345)
+	// Warning日志
+	glog.Warning("This is warning message")
+	glog.Warningf("This is warning message: %v", 12345)
+	glog.WarningDepth(1, "This is warning message", 12345)
+	// Error日志
+	glog.Error("This is error message")
+	glog.Errorf("This is error message: %v", 12345)
+	glog.ErrorDepth(1, "This is error message", 12345)
+	// Fatal日志（会自动触发abort）
+	glog.Fatal("This is fatal message")
+	glog.Fatalf("This is fatal message: %v", 12345)
+	glog.FatalDepth(1, "This is fatal message", 12345)
 }
 
 // 1.21最新放到标准库的slog，相比原生log更强大，但偏向于Json格式化日志，并不提供format形式的日志能力
@@ -106,6 +133,7 @@ func use_slog() {
 }
 
 func main() {
-	use_log()  // 参考自：https://darjun.github.io/2020/02/07/godailylib/log/
-	use_slog() // 参考自：https://tonybai.com/2023/09/01/slog-a-new-choice-for-logging-in-go/
+	// use_log()  // 参考自：https://darjun.github.io/2020/02/07/godailylib/log/
+	use_glog() // 参考自：https://www.jb51.net/jiaoben/298061x46.htm
+	// use_slog() // 参考自：https://tonybai.com/2023/09/01/slog-a-new-choice-for-logging-in-go/
 }
