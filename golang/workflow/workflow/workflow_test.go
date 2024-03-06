@@ -119,9 +119,9 @@ func TestWorkflowTimeDuration(t *testing.T) {
 	wf.Init("test", 0, nil)
 	wf.AppendStep(step).AppendStep(step).AppendStep(step)
 	wf.Start(0)
-	fmt.Println(wf.stepStatus)
-	fmt.Println(wf.stepDuration)
-	fmt.Println(wf.workflowDuration)
+	fmt.Println(wf.stepStatusList)
+	fmt.Println(wf.stepElapseList)
+	fmt.Println(wf.workflowElapse)
 }
 
 func BenchmarkWorkflow(b *testing.B) {

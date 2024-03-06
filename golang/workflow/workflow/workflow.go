@@ -16,6 +16,7 @@ package workflow
 
 import (
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/golang/glog"
@@ -45,19 +46,21 @@ type Workflow struct {
 	// workflow的step列表
 	stepList []StepInterface
 	// workflow每项任务的状态列表
-	stepStatus []StepStatus
+	stepStatusList []StepStatus
 	// workflow每项任务的耗时信息
-	stepDuration []time.Duration
+	stepElapseList []time.Duration
 	// workflow自身状态信息
 	stat WorkStatus
 	// workflow整体耗时
-	workflowDuration time.Duration
+	workflowElapse time.Duration
 	// workflow超时控制
-	workflowTTL time.Duration
+	ttl time.Duration
 	// 带重试策略的step执行函数
 	retryPolicy func(func() error) error
 	// 存储相邻step之间的管道数据
 	pipeData interface{}
+	// 用户处理并发step的同步机制
+	waitGroup *sync.WaitGroup
 }
 
 /*
@@ -71,7 +74,7 @@ type Workflow struct {
 */
 func (wf *Workflow) Init(name string, ttl time.Duration, retryPolicy func(func() error) error) *Workflow {
 	wf.name = name
-	wf.workflowTTL = ttl
+	wf.ttl = ttl
 	wf.retryPolicy = retryPolicy
 	if wf.retryPolicy == nil {
 		wf.retryPolicy = wf.NoRetry
@@ -91,9 +94,9 @@ func (wf *Workflow) Init(name string, ttl time.Duration, retryPolicy func(func()
 */
 func (wf *Workflow) Reset() *Workflow {
 	wf.currentStepIndex = -1
-	wf.stepStatus = make([]StepStatus, len(wf.stepList))
-	wf.stepDuration = make([]time.Duration, len(wf.stepList))
-	wf.workflowDuration = 0
+	wf.stepStatusList = make([]StepStatus, len(wf.stepList))
+	wf.stepElapseList = make([]time.Duration, len(wf.stepList))
+	wf.workflowElapse = 0
 	wf.stat = WORKREADY
 	return wf
 }
@@ -116,8 +119,8 @@ func (wf *Workflow) Name() string {
 */
 func (wf *Workflow) AppendStep(step StepInterface) *Workflow {
 	wf.stepList = append(wf.stepList, step)
-	wf.stepStatus = append(wf.stepStatus, STEPWAIT)
-	wf.stepDuration = append(wf.stepDuration, 0)
+	wf.stepStatusList = append(wf.stepStatusList, STEPWAIT)
+	wf.stepElapseList = append(wf.stepElapseList, 0)
 	return wf
 }
 
@@ -129,11 +132,11 @@ func (wf *Workflow) AppendStep(step StepInterface) *Workflow {
 */
 func (wf *Workflow) SetStepList(stepList []StepInterface) *Workflow {
 	wf.stepList = stepList
-	wf.stepStatus = make([]StepStatus, len(stepList))
-	wf.stepDuration = make([]time.Duration, len(stepList))
+	wf.stepStatusList = make([]StepStatus, len(stepList))
+	wf.stepElapseList = make([]time.Duration, len(stepList))
 	for i, _ := range stepList {
-		wf.stepStatus[i] = STEPWAIT
-		wf.stepDuration[i] = 0
+		wf.stepStatusList[i] = STEPWAIT
+		wf.stepElapseList[i] = 0
 	}
 	return wf
 }
@@ -170,9 +173,9 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 		if err := wf.doStep(params...); err != nil {
 			return wf.pipeData, err
 		}
-		wf.stepDuration[wf.CurrentStep()] = time.Since(stepTimeBegin)
-		wf.workflowDuration = time.Since(workflowTimeBegin)
-		if wf.workflowTTL > 0 && wf.workflowDuration > wf.workflowTTL {
+		wf.stepElapseList[wf.CurrentStep()] = time.Since(stepTimeBegin)
+		wf.workflowElapse = time.Since(workflowTimeBegin)
+		if wf.ttl > 0 && wf.workflowElapse > wf.ttl {
 			wf.stat = WORKTIMEOUTFINISH
 			return wf.pipeData, errors.New("workflow timeout quit")
 		}
@@ -202,38 +205,38 @@ func (wf *Workflow) doStep(params ...interface{}) error {
 		timeBegin := time.Now()
 
 		// do before
-		wf.stepStatus[wf.currentStepIndex] = STEPREADY
+		wf.stepStatusList[wf.currentStepIndex] = STEPREADY
 		if err := wf.stepList[wf.currentStepIndex].Before(wf.pipeData, params...); err != nil {
-			wf.stepStatus[wf.currentStepIndex] = STEPSKIP
+			wf.stepStatusList[wf.currentStepIndex] = STEPSKIP
 			wf.pipeData = err
 			return nil
 		}
 
 		// do step
-		wf.stepStatus[wf.currentStepIndex] = STEPRUNNING
+		wf.stepStatusList[wf.currentStepIndex] = STEPRUNNING
 		var err error
 		if wf.pipeData, err = wf.stepList[wf.currentStepIndex].DoStep(wf.pipeData, params...); err != nil {
-			wf.stepStatus[wf.currentStepIndex] = STEPERROR
+			wf.stepStatusList[wf.currentStepIndex] = STEPERROR
 			return err
 		}
 
 		// do after
-		wf.stepStatus[wf.currentStepIndex] = STEPDONE
+		wf.stepStatusList[wf.currentStepIndex] = STEPDONE
 		if err := wf.stepList[wf.currentStepIndex].After(wf.pipeData, params...); err != nil {
-			wf.stepStatus[wf.currentStepIndex] = STEPERROR
+			wf.stepStatusList[wf.currentStepIndex] = STEPERROR
 			wf.pipeData = err
 			return nil
 		}
 
-		wf.stepStatus[wf.currentStepIndex] = STEPFINISH
+		wf.stepStatusList[wf.currentStepIndex] = STEPFINISH
 
-		wf.stepDuration[wf.currentStepIndex] = time.Since(timeBegin)
+		wf.stepElapseList[wf.currentStepIndex] = time.Since(timeBegin)
 		return nil
 	}
 
 	// 基于重试策略执行step
 	if err := wf.retryPolicy(stepClosure); err != nil {
-		wf.stepStatus[wf.currentStepIndex] = STEPERRFINISH
+		wf.stepStatusList[wf.currentStepIndex] = STEPERRFINISH
 		wf.stat = WORKERRFINISH
 		return err
 	}
@@ -298,17 +301,17 @@ func (wf *Workflow) CurrentStepStat() StepStatus {
 	if wf.currentStepIndex < 0 {
 		return STEPUNKNOWN
 	}
-	return wf.stepStatus[wf.currentStepIndex]
+	return wf.stepStatusList[wf.currentStepIndex]
 }
 
 /*
 // ===  FUNCTION  ======================================================================
-//         Name:  TimeDuration
+//         Name:  GetAllStepElapse
 //  Description:  workflow整体的耗时，及每个step的耗时
 // =====================================================================================
 */
-func (wf *Workflow) TimeDuration() (time.Duration, []time.Duration) {
-	return wf.workflowDuration, wf.stepDuration[:wf.currentStepIndex+1]
+func (wf *Workflow) GetAllStepElapse() (time.Duration, []time.Duration) {
+	return wf.workflowElapse, wf.stepElapseList[:wf.currentStepIndex+1]
 }
 
 /*
@@ -322,21 +325,21 @@ func (wf *Workflow) LastStepStat() StepStatus {
 		return STEPUNKNOWN
 	}
 	if wf.currentStepIndex >= len(wf.stepList) {
-		return wf.stepStatus[len(wf.stepList)-1]
+		return wf.stepStatusList[len(wf.stepList)-1]
 	} else {
-		return wf.stepStatus[wf.currentStepIndex]
+		return wf.stepStatusList[wf.currentStepIndex]
 	}
 }
 
 /*
 // ===  FUNCTION  ======================================================================
-//         Name:  GetWorkflowDuration
+//         Name:  GetWorkflowElapse
 //  Description:  获取上一个workflow的执行时间
 // =====================================================================================
 */
 //
-func (wf *Workflow) GetWorkflowDuration() time.Duration {
-	return wf.workflowDuration
+func (wf *Workflow) GetWorkflowElapse() time.Duration {
+	return wf.workflowElapse
 }
 
 /*
@@ -347,7 +350,7 @@ func (wf *Workflow) GetWorkflowDuration() time.Duration {
 */
 //
 func (wf *Workflow) SetTimeoutWarning(ttl time.Duration) {
-	wf.workflowTTL = ttl
+	wf.ttl = ttl
 }
 
 /*
