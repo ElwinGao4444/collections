@@ -18,8 +18,8 @@ import "time"
 
 type StepStatus int
 
-const STEPWAIT StepStatus = 0      // 等待调度
-const STEPREADY StepStatus = 1     // 上调度，准备执行Before()
+const STEPWAIT StepStatus = 0      // 等待执行
+const STEPREADY StepStatus = 1     // 任务开始，准备执行Before()
 const STEPRUNNING StepStatus = 2   // Before执行完成，开始执行任务
 const STEPDONE StepStatus = 3      // 任务执行完成，准备执行After()
 const STEPSKIP StepStatus = 4      // 任务跳过，直接进入下一步

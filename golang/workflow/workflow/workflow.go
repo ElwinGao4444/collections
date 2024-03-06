@@ -117,14 +117,15 @@ func (wf *Workflow) Name() string {
 // =====================================================================================
 */
 func (wf *Workflow) AppendStep(step StepInterface) *Workflow {
+	step.SetStatus(STEPWAIT)
 	wf.stepList = append(wf.stepList, step)
 	return wf
 }
 
 /*
 // ===  FUNCTION  ======================================================================
-//         Name:  AppendStep
-//  Description:  追加step
+//         Name:  AppendAsyncStep
+//  Description:  追加异步step
 // =====================================================================================
 */
 func (wf *Workflow) AppendAsyncStep(step StepInterface) *Workflow {
@@ -135,7 +136,7 @@ func (wf *Workflow) AppendAsyncStep(step StepInterface) *Workflow {
 /*
 // ===  FUNCTION  ======================================================================
 //         Name:  SetStepList
-//  Description:  设置step list，这个操作会覆盖workflow中已经注册的step
+//  Description:  设置同步step list，这个操作会覆盖workflow中已经注册的step
 // =====================================================================================
 */
 func (wf *Workflow) SetStepList(stepList []StepInterface) *Workflow {
@@ -149,8 +150,8 @@ func (wf *Workflow) SetStepList(stepList []StepInterface) *Workflow {
 
 /*
 // ===  FUNCTION  ======================================================================
-//         Name:  SetStepList
-//  Description:  设置step list，这个操作会覆盖workflow中已经注册的step
+//         Name:  GetStepList
+//  Description:  获取同步step list
 // =====================================================================================
 */
 func (wf *Workflow) GetStepList() []StepInterface {
@@ -191,18 +192,19 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 				step.SetError(err)
 				return
 			}
+			step.SetElapse(time.Since(workflowTimeBegin))
 		}(step)
 	}
 
 	// 处理同步step
 	wf.pipeData = input
 	for wf.HasNext() {
-		wf.StepNext()
+		var step = wf.StepNext()
 		var stepTimeBegin = time.Now()
 		if err := wf.doStep(params...); err != nil {
 			return wf.pipeData, err
 		}
-		wf.CurrentStep().SetElapse(time.Since(stepTimeBegin))
+		step.SetElapse(time.Since(stepTimeBegin))
 		wf.elapse = time.Since(workflowTimeBegin)
 		if wf.ttl > 0 && wf.elapse > wf.ttl {
 			wf.status = WORKTIMEOUTFINISH
@@ -227,50 +229,52 @@ func (wf *Workflow) doStep(params ...interface{}) error {
 		glog.Error("workflow has been finished")
 		return errors.New("workflow has been finished")
 	}
-	if wf.currentStepIndex >= len(wf.stepList) {
+
+	var currentStep = wf.CurrentStep()
+	if currentStep == nil {
 		glog.Errorf("currentStepIndex[%d] is outof range[%d]", wf.currentStepIndex, len(wf.stepList))
 		return errors.New("currentStepIndex is outof range")
 	}
 
-	// 创建step单次执行逻辑
+	// 创建step单次执行逻辑闭包
 	stepClosure := func() error {
 		var err error
-		defer wf.stepList[wf.currentStepIndex].SetError(err)
+		defer currentStep.SetError(err)
 
 		timeBegin := time.Now()
 
 		// do before
-		wf.stepList[wf.currentStepIndex].SetStatus(STEPREADY)
-		if err = wf.stepList[wf.currentStepIndex].Before(wf.pipeData, params...); err != nil {
-			wf.stepList[wf.currentStepIndex].SetStatus(STEPSKIP)
+		currentStep.SetStatus(STEPREADY)
+		if err = currentStep.Before(wf.pipeData, params...); err != nil {
+			currentStep.SetStatus(STEPSKIP)
 			wf.pipeData = err
 			return nil
 		}
 
 		// do step
-		wf.stepList[wf.currentStepIndex].SetStatus(STEPRUNNING)
-		if wf.pipeData, err = wf.stepList[wf.currentStepIndex].DoStep(wf.pipeData, params...); err != nil {
-			wf.stepList[wf.currentStepIndex].SetStatus(STEPERROR)
+		currentStep.SetStatus(STEPRUNNING)
+		if wf.pipeData, err = currentStep.DoStep(wf.pipeData, params...); err != nil {
+			currentStep.SetStatus(STEPERROR)
 			return err
 		}
 
 		// do after
-		wf.stepList[wf.currentStepIndex].SetStatus(STEPDONE)
-		if err = wf.stepList[wf.currentStepIndex].After(wf.pipeData, params...); err != nil {
-			wf.stepList[wf.currentStepIndex].SetStatus(STEPERROR)
+		currentStep.SetStatus(STEPDONE)
+		if err = currentStep.After(wf.pipeData, params...); err != nil {
+			currentStep.SetStatus(STEPERROR)
 			wf.pipeData = err
 			return nil
 		}
 
-		wf.stepList[wf.currentStepIndex].SetStatus(STEPFINISH)
+		currentStep.SetStatus(STEPFINISH)
 
-		wf.stepList[wf.currentStepIndex].SetElapse(time.Since(timeBegin))
+		currentStep.SetElapse(time.Since(timeBegin))
 		return nil
 	}
 
 	// 基于重试策略执行step
 	if err := wf.retryPolicy(stepClosure); err != nil {
-		wf.stepList[wf.currentStepIndex].SetStatus(STEPERRFINISH)
+		currentStep.SetStatus(STEPERRFINISH)
 		wf.status = WORKERRFINISH
 		return err
 	}
@@ -303,7 +307,7 @@ func (wf *Workflow) HasNext() bool {
 */
 func (wf *Workflow) StepNext() StepInterface {
 	wf.currentStepIndex++
-	return wf.stepList[wf.currentStepIndex]
+	return wf.CurrentStep()
 }
 
 /*
