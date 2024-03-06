@@ -14,7 +14,10 @@
 
 package workflow
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type FakeStep struct {
 	StepInterface
@@ -58,7 +61,7 @@ func (step *FakeStep) Before(input interface{}, params ...interface{}) error {
 func (step *FakeStep) DoStep(input interface{}, params ...interface{}) (interface{}, error) {
 	switch v := input.(type) {
 	case int:
-		step.Data = v * 2
+		step.Data = v + 1
 	}
 
 	if len(params) > 0 {
@@ -67,6 +70,8 @@ func (step *FakeStep) DoStep(input interface{}, params ...interface{}) (interfac
 			if v.Error() == "step" {
 				return 0, v
 			}
+		case time.Duration:
+			time.Sleep(v)
 		}
 	}
 

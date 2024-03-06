@@ -17,7 +17,6 @@ package workflow
 import (
 	"errors"
 	"fmt"
-	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,13 +35,13 @@ func TestWorkflowBasic(t *testing.T) {
 	assert.Equal(t, wf.currentStepIndex, -1, "test index")
 	assert.Equal(t, wf.CurrentStepStat(), STEPUNKNOWN, "test current step stat")
 	assert.Equal(t, wf.LastStepStat(), STEPUNKNOWN, "test last step stat")
-	result, _ := wf.Start(1)
-	assert.Equal(t, result.(int), 8, "test workflow result")
+	result, _ := wf.Start(0)
+	assert.Equal(t, result.(int), 3, "test workflow result")
 	for i, step := range wf.GetStepList() {
 		assert.Equal(t, step.(*FakeStep).BeforeCount, 1, "test fake step")
 		assert.Equal(t, step.(*FakeStep).DoStepCount, 1, "test fake step")
 		assert.Equal(t, step.(*FakeStep).AfterCount, 1, "test fake step")
-		assert.Equal(t, step.(*FakeStep).Data, int(math.Pow(2, float64(i+1))), "test fake step")
+		assert.Equal(t, step.(*FakeStep).Data, i+1, "test fake step")
 	}
 }
 
@@ -56,7 +55,7 @@ func TestWorkflowDetail(t *testing.T) {
 	assert.Equal(t, wf.CurrentStepStat(), STEPUNKNOWN, "test current step stat")
 	assert.Equal(t, wf.LastStepStat(), STEPUNKNOWN, "test last step stat")
 	wf.status = WORKRUNNING
-	wf.pipeData = 1
+	wf.pipeData = 0
 	for i := 0; i < 3; i++ {
 		assert.Equal(t, wf.HasNext(), true, "test has next")
 		var step = wf.StepNext().(*FakeStep)
@@ -64,7 +63,7 @@ func TestWorkflowDetail(t *testing.T) {
 		assert.Equal(t, step.BeforeCount, 1, "test fake step")
 		assert.Equal(t, step.DoStepCount, 1, "test fake step")
 		assert.Equal(t, step.AfterCount, 1, "test fake step")
-		assert.Equal(t, step.Data, int(math.Pow(2, float64(i+1))), "test fake step")
+		assert.Equal(t, step.Data, i+1, "test fake step")
 		assert.Equal(t, wf.currentStepIndex, i, "test index")
 		if i == 2 {
 			assert.Equal(t, wf.WorkflowStat(), WORKFINISH, "test current work stat")
