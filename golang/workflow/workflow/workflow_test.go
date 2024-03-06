@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"testing"
 
-	. "workflow/fake_step"
-
 	"github.com/stretchr/testify/assert"
 )
 
