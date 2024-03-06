@@ -51,6 +51,8 @@ type Workflow struct {
 	stepElapseList []time.Duration
 	// workflow的异步step列表
 	stepAsyncList []StepInterface
+	// workflow的异步step结果列表
+	stepAsyncResultList []interface{}
 	// workflow自身状态信息
 	status WorkStatus
 	// workflow整体耗时
@@ -82,6 +84,7 @@ func (wf *Workflow) Init(name string, ttl time.Duration, retryPolicy func(func()
 		wf.retryPolicy = wf.NoRetry
 	}
 	wf.stepList = make([]StepInterface, 0)
+	wf.waitGroup = new(sync.WaitGroup)
 	wf.Reset()
 	wf.status = WORKINIT
 	return wf
@@ -171,14 +174,31 @@ func (wf *Workflow) GetStepList() []StepInterface {
 // =====================================================================================
 */
 func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}, error) {
-	if len(wf.stepList) == 0 {
-		glog.Errorf("name[%s] no step in workflow", wf.name)
-		return nil, errors.New("no step in workflow")
-	}
 	wf.Reset()
 	wf.status = WORKRUNNING
 
 	var workflowTimeBegin = time.Now()
+
+	for i, step := range wf.stepAsyncList {
+		wf.waitGroup.Add(1)
+		go func(idx int) {
+			defer wf.waitGroup.Done()
+			if err := step.Before(input, params...); err != nil {
+				step.SetError(err)
+				return
+			}
+			if res, err := step.DoStep(input, params...); err != nil {
+				wf.stepAsyncResultList[idx] = res
+				step.SetError(err)
+				return
+			}
+			if err := step.After(input, params...); err != nil {
+				step.SetError(err)
+				return
+			}
+		}(i)
+	}
+
 	wf.pipeData = input
 	for wf.HasNext() {
 		wf.StepNext()
@@ -193,6 +213,9 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 			return wf.pipeData, errors.New("workflow timeout")
 		}
 	}
+
+	wf.waitGroup.Wait()
+	wf.elapse = time.Since(workflowTimeBegin)
 	return wf.pipeData, nil
 }
 

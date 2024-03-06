@@ -116,6 +116,22 @@ func TestWorkflowTimeout(t *testing.T) {
 	assert.Equal(t, result.(int), 2, "test workflow timeout")
 }
 
+func TestWorkflowAsyncStep(t *testing.T) {
+	var wf = new(Workflow).
+		Init("test", 0, nil).
+		AppendAsyncStep(new(FakeStep)).
+		AppendAsyncStep(new(FakeStep)).
+		AppendAsyncStep(new(FakeStep))
+	for _, res := range wf.stepAsyncResultList {
+		assert.Equal(t, res, 0, "test fake step")
+	}
+	wf.Start(0, time.Duration(20)*time.Millisecond)
+	assert.Less(t, wf.elapse, time.Duration(25)*time.Millisecond, "test fake step")
+	for _, res := range wf.stepAsyncResultList {
+		assert.Equal(t, res, 1, "test fake step")
+	}
+}
+
 func BenchmarkWorkflow(b *testing.B) {
 	b.ResetTimer()
 
