@@ -215,11 +215,14 @@ func (wf *Workflow) doStep(params ...interface{}) error {
 
 	// 创建step单次执行逻辑
 	stepClosure := func() error {
+		var err error
+		defer wf.stepList[wf.currentStepIndex].SetError(err)
+
 		timeBegin := time.Now()
 
 		// do before
 		wf.stepStatusList[wf.currentStepIndex] = STEPREADY
-		if err := wf.stepList[wf.currentStepIndex].Before(wf.pipeData, params...); err != nil {
+		if err = wf.stepList[wf.currentStepIndex].Before(wf.pipeData, params...); err != nil {
 			wf.stepStatusList[wf.currentStepIndex] = STEPSKIP
 			wf.pipeData = err
 			return nil
@@ -227,7 +230,6 @@ func (wf *Workflow) doStep(params ...interface{}) error {
 
 		// do step
 		wf.stepStatusList[wf.currentStepIndex] = STEPRUNNING
-		var err error
 		if wf.pipeData, err = wf.stepList[wf.currentStepIndex].DoStep(wf.pipeData, params...); err != nil {
 			wf.stepStatusList[wf.currentStepIndex] = STEPERROR
 			return err
@@ -235,7 +237,7 @@ func (wf *Workflow) doStep(params ...interface{}) error {
 
 		// do after
 		wf.stepStatusList[wf.currentStepIndex] = STEPDONE
-		if err := wf.stepList[wf.currentStepIndex].After(wf.pipeData, params...); err != nil {
+		if err = wf.stepList[wf.currentStepIndex].After(wf.pipeData, params...); err != nil {
 			wf.stepStatusList[wf.currentStepIndex] = STEPERROR
 			wf.pipeData = err
 			return nil
@@ -280,8 +282,9 @@ func (wf *Workflow) HasNext() bool {
 //  Description:
 // =====================================================================================
 */
-func (wf *Workflow) StepNext() {
+func (wf *Workflow) StepNext() StepInterface {
 	wf.currentStepIndex++
+	return wf.stepList[wf.currentStepIndex]
 }
 
 /*

@@ -58,7 +58,7 @@ func (step *FakeStep) Before(input interface{}, params ...interface{}) error {
 func (step *FakeStep) DoStep(input interface{}, params ...interface{}) (interface{}, error) {
 	switch v := input.(type) {
 	case int:
-		step.Data += v
+		step.Data = v * 2
 	}
 
 	if len(params) > 0 {
