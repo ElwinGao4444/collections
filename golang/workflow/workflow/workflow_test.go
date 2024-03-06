@@ -107,6 +107,7 @@ func TestWorkflowSkipAndError(t *testing.T) {
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Error(), nil, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Status(), STEPFINISH, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Result(), 3, "fake step")
+	assert.Equal(t, wf.Status(), WORKFINISH, "workflow status")
 
 	// before error
 	wf = new(Workflow).Init("test").AppendStep(new(FakeStep)).AppendStep(new(FakeStep))
@@ -127,6 +128,7 @@ func TestWorkflowSkipAndError(t *testing.T) {
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Error(), nil, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Status(), STEPWAIT, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Result(), nil, "fake step")
+	assert.Equal(t, wf.Status(), WORKERRFINISH, "workflow status")
 
 	// do step error
 	wf = new(Workflow).Init("test").AppendStep(new(FakeStep)).AppendStep(new(FakeStep))
@@ -147,6 +149,7 @@ func TestWorkflowSkipAndError(t *testing.T) {
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Error(), nil, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Status(), STEPWAIT, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Result(), nil, "fake step")
+	assert.Equal(t, wf.Status(), WORKERRFINISH, "workflow status")
 
 	// after error
 	wf = new(Workflow).Init("test").AppendStep(new(FakeStep)).AppendStep(new(FakeStep))
@@ -167,6 +170,7 @@ func TestWorkflowSkipAndError(t *testing.T) {
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Error(), nil, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Status(), STEPWAIT, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Result(), nil, "fake step")
+	assert.Equal(t, wf.Status(), WORKERRFINISH, "workflow status")
 }
 
 func TestWorkflowTimeout(t *testing.T) {
@@ -179,6 +183,16 @@ func TestWorkflowTimeout(t *testing.T) {
 	result, err := wf.Start(0, time.Duration(50)*time.Millisecond)
 	assert.Equal(t, err.Error(), "workflow timeout", "workflow timeout")
 	assert.Equal(t, result.(int), 2, "workflow timeout")
+	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Error(), nil, "fake step")
+	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Status(), STEPFINISH, "fake step")
+	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Result(), 1, "fake step")
+	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Error(), nil, "fake step")
+	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Status(), STEPFINISH, "fake step")
+	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Result(), 2, "fake step")
+	assert.Equal(t, wf.GetStepList()[2].(*FakeStep).Error(), nil, "fake step")
+	assert.Equal(t, wf.GetStepList()[2].(*FakeStep).Status(), STEPWAIT, "fake step")
+	assert.Equal(t, wf.GetStepList()[2].(*FakeStep).Result(), nil, "fake step")
+	assert.Equal(t, wf.Status(), WORKTIMEOUTFINISH, "workflow timeout")
 }
 
 func TestWorkflowAsyncStep(t *testing.T) {
@@ -189,12 +203,15 @@ func TestWorkflowAsyncStep(t *testing.T) {
 		AppendAsyncStep(new(FakeStep))
 	for _, step := range wf.stepAsyncList {
 		assert.Equal(t, step.Result(), nil, "fake step")
+		assert.Equal(t, step.Error(), nil, "async step error")
+		assert.Equal(t, step.Status(), STEPWAIT, "async step status")
 	}
 	wf.Start(0, time.Duration(20)*time.Millisecond)
 	assert.Less(t, wf.elapse, time.Duration(25)*time.Millisecond, "fake step")
 	for _, step := range wf.stepAsyncList {
 		assert.Equal(t, step.Result(), 1, "async step result")
 		assert.Equal(t, step.Error(), nil, "async step error")
+		assert.Equal(t, step.Status(), STEPFINISH, "async step status")
 	}
 }
 
