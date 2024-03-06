@@ -32,7 +32,7 @@ func TestWorkflowBasic(t *testing.T) {
 	stepList = append(stepList, step)
 	wf.SetStepList(stepList)
 	assert.Equal(t, len(wf.GetStepList()), 3, "test get stepList")
-	assert.Equal(t, wf.stat, WORKINIT, "test init")
+	assert.Equal(t, wf.status, WORKINIT, "test init")
 	assert.Equal(t, wf.currentStepIndex, -1, "test index")
 	assert.Equal(t, wf.CurrentStepStat(), STEPUNKNOWN, "test current step stat")
 	assert.Equal(t, wf.LastStepStat(), STEPUNKNOWN, "test last step stat")
@@ -54,11 +54,11 @@ func TestWorkflowDetail(t *testing.T) {
 	stepList = append(stepList, step)
 	wf.SetStepList(stepList)
 	assert.Equal(t, len(wf.GetStepList()), 3, "test get stepList")
-	assert.Equal(t, wf.stat, WORKINIT, "test init")
+	assert.Equal(t, wf.status, WORKINIT, "test init")
 	assert.Equal(t, wf.currentStepIndex, -1, "test index")
 	assert.Equal(t, wf.CurrentStepStat(), STEPUNKNOWN, "test current step stat")
 	assert.Equal(t, wf.LastStepStat(), STEPUNKNOWN, "test last step stat")
-	wf.stat = WORKRUNNING
+	wf.status = WORKRUNNING
 	wf.pipeData = 1
 	var n = 1
 	for i := 0; i < 3; i++ {
@@ -121,7 +121,7 @@ func TestWorkflowTimeDuration(t *testing.T) {
 	wf.Start(0)
 	fmt.Println(wf.stepStatusList)
 	fmt.Println(wf.stepElapseList)
-	fmt.Println(wf.workflowElapse)
+	fmt.Println(wf.elapse)
 }
 
 func BenchmarkWorkflow(b *testing.B) {

@@ -49,10 +49,12 @@ type Workflow struct {
 	stepStatusList []StepStatus
 	// workflow每项任务的耗时信息
 	stepElapseList []time.Duration
+	// workflow的异步step列表
+	stepAsyncList []StepInterface
 	// workflow自身状态信息
-	stat WorkStatus
+	status WorkStatus
 	// workflow整体耗时
-	workflowElapse time.Duration
+	elapse time.Duration
 	// workflow超时控制
 	ttl time.Duration
 	// 带重试策略的step执行函数
@@ -81,7 +83,7 @@ func (wf *Workflow) Init(name string, ttl time.Duration, retryPolicy func(func()
 	}
 	wf.stepList = make([]StepInterface, 0)
 	wf.Reset()
-	wf.stat = WORKINIT
+	wf.status = WORKINIT
 	return wf
 }
 
@@ -96,8 +98,8 @@ func (wf *Workflow) Reset() *Workflow {
 	wf.currentStepIndex = -1
 	wf.stepStatusList = make([]StepStatus, len(wf.stepList))
 	wf.stepElapseList = make([]time.Duration, len(wf.stepList))
-	wf.workflowElapse = 0
-	wf.stat = WORKREADY
+	wf.elapse = 0
+	wf.status = WORKREADY
 	return wf
 }
 
@@ -121,6 +123,17 @@ func (wf *Workflow) AppendStep(step StepInterface) *Workflow {
 	wf.stepList = append(wf.stepList, step)
 	wf.stepStatusList = append(wf.stepStatusList, STEPWAIT)
 	wf.stepElapseList = append(wf.stepElapseList, 0)
+	return wf
+}
+
+/*
+// ===  FUNCTION  ======================================================================
+//         Name:  AppendStep
+//  Description:  追加step
+// =====================================================================================
+*/
+func (wf *Workflow) AppendAsyncStep(step StepInterface) *Workflow {
+	wf.stepAsyncList = append(wf.stepList, step)
 	return wf
 }
 
@@ -163,7 +176,7 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 		return nil, errors.New("no step in workflow")
 	}
 	wf.Reset()
-	wf.stat = WORKRUNNING
+	wf.status = WORKRUNNING
 
 	var workflowTimeBegin = time.Now()
 	wf.pipeData = input
@@ -174,9 +187,9 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 			return wf.pipeData, err
 		}
 		wf.stepElapseList[wf.CurrentStep()] = time.Since(stepTimeBegin)
-		wf.workflowElapse = time.Since(workflowTimeBegin)
-		if wf.ttl > 0 && wf.workflowElapse > wf.ttl {
-			wf.stat = WORKTIMEOUTFINISH
+		wf.elapse = time.Since(workflowTimeBegin)
+		if wf.ttl > 0 && wf.elapse > wf.ttl {
+			wf.status = WORKTIMEOUTFINISH
 			return wf.pipeData, errors.New("workflow timeout quit")
 		}
 	}
@@ -191,7 +204,7 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 */
 func (wf *Workflow) doStep(params ...interface{}) error {
 	// 参数校验
-	if wf.stat == WORKFINISH || wf.stat == WORKERRFINISH || wf.stat == WORKTIMEOUTFINISH {
+	if wf.status == WORKFINISH || wf.status == WORKERRFINISH || wf.status == WORKTIMEOUTFINISH {
 		glog.Error("workflow has been finished")
 		return errors.New("workflow has been finished")
 	}
@@ -237,12 +250,12 @@ func (wf *Workflow) doStep(params ...interface{}) error {
 	// 基于重试策略执行step
 	if err := wf.retryPolicy(stepClosure); err != nil {
 		wf.stepStatusList[wf.currentStepIndex] = STEPERRFINISH
-		wf.stat = WORKERRFINISH
+		wf.status = WORKERRFINISH
 		return err
 	}
 
 	if wf.currentStepIndex == len(wf.stepList)-1 {
-		wf.stat = WORKFINISH
+		wf.status = WORKFINISH
 	}
 
 	return nil
@@ -255,7 +268,7 @@ func (wf *Workflow) doStep(params ...interface{}) error {
 // =====================================================================================
 */
 func (wf *Workflow) HasNext() bool {
-	if wf.stat == WORKFINISH || wf.stat == WORKERRFINISH {
+	if wf.status == WORKFINISH || wf.status == WORKERRFINISH {
 		return false
 	}
 	return wf.currentStepIndex < len(wf.stepList)-1
@@ -278,7 +291,7 @@ func (wf *Workflow) StepNext() {
 // =====================================================================================
 */
 func (wf *Workflow) WorkflowStat() WorkStatus {
-	return wf.stat
+	return wf.status
 }
 
 /*
@@ -311,7 +324,7 @@ func (wf *Workflow) CurrentStepStat() StepStatus {
 // =====================================================================================
 */
 func (wf *Workflow) GetAllStepElapse() (time.Duration, []time.Duration) {
-	return wf.workflowElapse, wf.stepElapseList[:wf.currentStepIndex+1]
+	return wf.elapse, wf.stepElapseList[:wf.currentStepIndex+1]
 }
 
 /*
@@ -339,7 +352,7 @@ func (wf *Workflow) LastStepStat() StepStatus {
 */
 //
 func (wf *Workflow) GetWorkflowElapse() time.Duration {
-	return wf.workflowElapse
+	return wf.elapse
 }
 
 /*

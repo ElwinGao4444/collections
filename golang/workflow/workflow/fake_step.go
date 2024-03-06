@@ -17,6 +17,9 @@ package workflow
 import "fmt"
 
 type FakeStep struct {
+	StepInterface
+	name        string
+	err         error
 	BeforeCount int
 	DoStepCount int
 	AfterCount  int
@@ -27,8 +30,16 @@ func (step *FakeStep) Name() string {
 	return "FakeStep"
 }
 
+func (step *FakeStep) SetName(name string) {
+	step.name = name
+}
+
 func (step *FakeStep) Error() error {
 	return nil
+}
+
+func (step *FakeStep) SetError(err error) {
+	step.err = err
 }
 
 func (step *FakeStep) Before(input interface{}, params ...interface{}) error {

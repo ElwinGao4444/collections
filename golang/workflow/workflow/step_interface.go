@@ -35,9 +35,11 @@ const STEPUNKNOWN StepStatus = 8   // 未知状态
 type StepInterface interface {
 	// step的名字
 	Name() string
+	SetName(string)
 
 	// step执行后的错误信息
 	Error() error
+	SetError(error)
 
 	// ===  FUNCTION  ======================================================================
 	//         Name:  Before
