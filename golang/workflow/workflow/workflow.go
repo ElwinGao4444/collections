@@ -182,9 +182,8 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 	var result interface{}
 	var err error
 	for wf.HasNext() {
-		var step = wf.StepNext()
-		result, err = wf.doStep(wf.CurrentStep(), input, params...)
-		if step.Error() != nil {
+		if result, err = wf.doStep(wf.StepNext(), input, params...); err != nil {
+			wf.status = WORKERRFINISH
 			return result, err
 		}
 		wf.elapse = time.Since(workflowTimeBegin)
@@ -220,16 +219,14 @@ func (wf *Workflow) doStep(step StepInterface, input interface{}, params ...inte
 	defer func() {step.SetError(err)}()
 	defer func() {step.SetResult(result)}()
 	stepClosure := func() error {
-		var skip bool
-
 		// do before
 		step.SetStatus(STEPREADY)
-		skip, err = step.Before(input, params...)
+		result, err = step.Before(input, params...)
 		if err != nil {
 			step.SetStatus(STEPERROR)
 			return err
 		}
-		if skip {
+		if result != nil {
 			step.SetStatus(STEPSKIP)
 			return nil
 		}
@@ -245,9 +242,10 @@ func (wf *Workflow) doStep(step StepInterface, input interface{}, params ...inte
 		step.SetStatus(STEPDONE)
 		if err = step.After(input, result, params...); err != nil {
 			step.SetStatus(STEPERROR)
-			return nil
+			return err
 		}
 
+		step.SetStatus(STEPFINISH)
 		return nil
 	}
 
@@ -256,10 +254,8 @@ func (wf *Workflow) doStep(step StepInterface, input interface{}, params ...inte
 	defer func() {step.SetElapse(time.Since(timeBegin))}()
 	if err := wf.retryPolicy(stepClosure); err != nil {
 		step.SetStatus(STEPERRFINISH)
-		wf.status = WORKERRFINISH
 		return result, err
 	}
-	step.SetStatus(STEPFINISH)
 	return result, nil
 }
 

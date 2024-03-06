@@ -62,17 +62,17 @@ type StepInterface interface {
 	//  Description:  step前置操作
 	//                参数：input - 输入参数
 	//                      params - 自定义参数
-	//                返回值: bool: 是否跳过当前step
+	//                返回值: interface{}: 非空则跳过当前step，并以该interface{}作为下一个step的input
 	//                        error: 如果error不为nil，则终止整个workflow 
 	// =====================================================================================
-	Before(input interface{}, params ...interface{}) (bool, error)
+	Before(input interface{}, params ...interface{}) (interface{}, error)
 
 	// ===  FUNCTION  ======================================================================
 	//         Name:  DoStep
 	//  Description:  step核心过程
-	//                参数：input - 输入参数
+	//                参数: input - 输入参数
 	//                      params - 自定义参数
-	//                返回值：interface{} - 当前step的输出信息，会传递给下一个step作为input
+	//                返回值: interface{} - 当前step的输出信息，会传递给下一个step作为input
 	//                        error - step执行的错误信息，当error不为nil时，返回结果不置信
 	// =====================================================================================
 	DoStep(input interface{}, params ...interface{}) (interface{}, error)
@@ -80,10 +80,10 @@ type StepInterface interface {
 	// ===  FUNCTION  ======================================================================
 	//         Name:  After
 	//  Description:  step后置操作
-	//                参数：input - 输入参数
+	//                参数: input - 输入参数
 	//                      result - DoStep的返回结果
 	//                      params - 自定义参数
-	//                返回值： 如果error不为nil，则终止整个workflow 
+	//                返回值: 如果error不为nil，则终止整个workflow，且step返回的结果不置信
 	// =====================================================================================
 	After(input interface{}, result interface{}, params ...interface{}) error
 }
@@ -137,7 +137,7 @@ func (step *BaseStep) SetElapse(elapse time.Duration) {
 	step.elapse = elapse
 }
 
-func (step *BaseStep) Before(input interface{}, params ...interface{}) (bool, error) {
+func (step *BaseStep) Before(input interface{}, params ...interface{}) (interface{}, error) {
 	return false, nil
 }
 

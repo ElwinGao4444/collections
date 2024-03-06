@@ -26,21 +26,22 @@ type FakeStep struct {
 	Data        int
 }
 
-func (step *FakeStep) Before(input interface{}, params ...interface{}) (bool, error) {
+func (step *FakeStep) Before(input interface{}, params ...interface{}) (interface{}, error) {
 	if len(params) > 0 {
 		switch v := params[0].(type) {
 		case error:
 			if v.Error() == "before" {
-				return false, v
+				return 0, v
 			}
 		case bool:
 			if v == true {
-				return false, nil
+				params[0] = false
+				return 2, nil
 			}
 		}
 	}
 	step.BeforeCount++
-	return false, nil
+	return nil, nil
 }
 
 func (step *FakeStep) DoStep(input interface{}, params ...interface{}) (interface{}, error) {
