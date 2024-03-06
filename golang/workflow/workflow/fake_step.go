@@ -20,29 +20,11 @@ import (
 )
 
 type FakeStep struct {
-	StepInterface
-	name        string
-	err         error
+	BaseStep
 	BeforeCount int
 	DoStepCount int
 	AfterCount  int
 	Data        int
-}
-
-func (step *FakeStep) Name() string {
-	return "FakeStep"
-}
-
-func (step *FakeStep) SetName(name string) {
-	step.name = name
-}
-
-func (step *FakeStep) Error() error {
-	return nil
-}
-
-func (step *FakeStep) SetError(err error) {
-	step.err = err
 }
 
 func (step *FakeStep) Before(input interface{}, params ...interface{}) error {

@@ -45,14 +45,8 @@ type Workflow struct {
 	currentStepIndex int
 	// workflow的step列表
 	stepList []StepInterface
-	// workflow每项任务的状态列表
-	stepStatusList []StepStatus
-	// workflow每项任务的耗时信息
-	stepElapseList []time.Duration
 	// workflow的异步step列表
 	stepAsyncList []StepInterface
-	// workflow的异步step结果列表
-	stepAsyncResultList []interface{}
 	// workflow自身状态信息
 	status WorkStatus
 	// workflow整体耗时
@@ -76,13 +70,10 @@ type Workflow struct {
 //                retryPolicy：重试策略，可以使用预制方法，也可以自定义，不重试可以传nil
 // =====================================================================================
 */
-func (wf *Workflow) Init(name string, ttl time.Duration, retryPolicy func(func() error) error) *Workflow {
+func (wf *Workflow) Init(name string) *Workflow {
 	wf.name = name
-	wf.ttl = ttl
-	wf.retryPolicy = retryPolicy
-	if wf.retryPolicy == nil {
-		wf.retryPolicy = wf.NoRetry
-	}
+	wf.ttl = 0
+	wf.retryPolicy = wf.NoRetry
 	wf.stepList = make([]StepInterface, 0)
 	wf.waitGroup = new(sync.WaitGroup)
 	wf.Reset()
@@ -99,10 +90,12 @@ func (wf *Workflow) Init(name string, ttl time.Duration, retryPolicy func(func()
 */
 func (wf *Workflow) Reset() *Workflow {
 	wf.currentStepIndex = -1
-	wf.stepStatusList = make([]StepStatus, len(wf.stepList))
-	wf.stepElapseList = make([]time.Duration, len(wf.stepList))
-	wf.elapse = 0
+	for _, step := range wf.stepList {
+		step.SetStatus(STEPWAIT)
+		step.SetElapse(0)
+	}
 	wf.status = WORKREADY
+	wf.elapse = 0
 	return wf
 }
 
@@ -124,8 +117,6 @@ func (wf *Workflow) Name() string {
 */
 func (wf *Workflow) AppendStep(step StepInterface) *Workflow {
 	wf.stepList = append(wf.stepList, step)
-	wf.stepStatusList = append(wf.stepStatusList, STEPWAIT)
-	wf.stepElapseList = append(wf.stepElapseList, 0)
 	return wf
 }
 
@@ -148,11 +139,9 @@ func (wf *Workflow) AppendAsyncStep(step StepInterface) *Workflow {
 */
 func (wf *Workflow) SetStepList(stepList []StepInterface) *Workflow {
 	wf.stepList = stepList
-	wf.stepStatusList = make([]StepStatus, len(stepList))
-	wf.stepElapseList = make([]time.Duration, len(stepList))
 	for i, _ := range stepList {
-		wf.stepStatusList[i] = STEPWAIT
-		wf.stepElapseList[i] = 0
+		wf.stepList[i].SetStatus(STEPWAIT)
+		wf.stepList[i].SetElapse(0)
 	}
 	return wf
 }
@@ -188,7 +177,7 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 				return
 			}
 			if res, err := step.DoStep(input, params...); err != nil {
-				wf.stepAsyncResultList[idx] = res
+				wf.stepAsyncList[idx].SetResult(res)
 				step.SetError(err)
 				return
 			}
@@ -206,7 +195,7 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 		if err := wf.doStep(params...); err != nil {
 			return wf.pipeData, err
 		}
-		wf.stepElapseList[wf.CurrentStep()] = time.Since(stepTimeBegin)
+		wf.CurrentStep().SetElapse(time.Since(stepTimeBegin))
 		wf.elapse = time.Since(workflowTimeBegin)
 		if wf.ttl > 0 && wf.elapse > wf.ttl {
 			wf.status = WORKTIMEOUTFINISH
@@ -244,37 +233,37 @@ func (wf *Workflow) doStep(params ...interface{}) error {
 		timeBegin := time.Now()
 
 		// do before
-		wf.stepStatusList[wf.currentStepIndex] = STEPREADY
+		wf.stepList[wf.currentStepIndex].SetStatus(STEPREADY)
 		if err = wf.stepList[wf.currentStepIndex].Before(wf.pipeData, params...); err != nil {
-			wf.stepStatusList[wf.currentStepIndex] = STEPSKIP
+			wf.stepList[wf.currentStepIndex].SetStatus(STEPSKIP)
 			wf.pipeData = err
 			return nil
 		}
 
 		// do step
-		wf.stepStatusList[wf.currentStepIndex] = STEPRUNNING
+		wf.stepList[wf.currentStepIndex].SetStatus(STEPRUNNING)
 		if wf.pipeData, err = wf.stepList[wf.currentStepIndex].DoStep(wf.pipeData, params...); err != nil {
-			wf.stepStatusList[wf.currentStepIndex] = STEPERROR
+			wf.stepList[wf.currentStepIndex].SetStatus(STEPERROR)
 			return err
 		}
 
 		// do after
-		wf.stepStatusList[wf.currentStepIndex] = STEPDONE
+		wf.stepList[wf.currentStepIndex].SetStatus(STEPDONE)
 		if err = wf.stepList[wf.currentStepIndex].After(wf.pipeData, params...); err != nil {
-			wf.stepStatusList[wf.currentStepIndex] = STEPERROR
+			wf.stepList[wf.currentStepIndex].SetStatus(STEPERROR)
 			wf.pipeData = err
 			return nil
 		}
 
-		wf.stepStatusList[wf.currentStepIndex] = STEPFINISH
+		wf.stepList[wf.currentStepIndex].SetStatus(STEPFINISH)
 
-		wf.stepElapseList[wf.currentStepIndex] = time.Since(timeBegin)
+		wf.stepList[wf.currentStepIndex].SetElapse(time.Since(timeBegin))
 		return nil
 	}
 
 	// 基于重试策略执行step
 	if err := wf.retryPolicy(stepClosure); err != nil {
-		wf.stepStatusList[wf.currentStepIndex] = STEPERRFINISH
+		wf.stepList[wf.currentStepIndex].SetStatus(STEPERRFINISH)
 		wf.status = WORKERRFINISH
 		return err
 	}
@@ -312,11 +301,11 @@ func (wf *Workflow) StepNext() StepInterface {
 
 /*
 // ===  FUNCTION  ======================================================================
-//         Name:  WorkflowStat
+//         Name:  Status
 //  Description:
 // =====================================================================================
 */
-func (wf *Workflow) WorkflowStat() WorkStatus {
+func (wf *Workflow) Status() WorkStatus {
 	return wf.status
 }
 
@@ -326,70 +315,49 @@ func (wf *Workflow) WorkflowStat() WorkStatus {
 //  Description:
 // =====================================================================================
 */
-func (wf *Workflow) CurrentStep() int {
-	return wf.currentStepIndex
-}
-
-/*
-// ===  FUNCTION  ======================================================================
-//         Name:  CurrentStepStat
-//  Description:  获取当前step的状态，如果workflow处于非运行状态，则返回STEPUNKNOWN
-// =====================================================================================
-*/
-func (wf *Workflow) CurrentStepStat() StepStatus {
-	if wf.currentStepIndex < 0 {
-		return STEPUNKNOWN
+func (wf *Workflow) CurrentStep() StepInterface {
+	if wf.currentStepIndex < 0 || wf.currentStepIndex >= len(wf.stepList) {
+		return nil
 	}
-	return wf.stepStatusList[wf.currentStepIndex]
+	return wf.stepList[wf.currentStepIndex]
 }
 
 /*
 // ===  FUNCTION  ======================================================================
-//         Name:  GetAllStepElapse
-//  Description:  workflow整体的耗时，及每个step的耗时
-// =====================================================================================
-*/
-func (wf *Workflow) GetAllStepElapse() (time.Duration, []time.Duration) {
-	return wf.elapse, wf.stepElapseList[:wf.currentStepIndex+1]
-}
-
-/*
-// ===  FUNCTION  ======================================================================
-//         Name:  LastStepStat
-//  Description:
-// =====================================================================================
-*/
-func (wf *Workflow) LastStepStat() StepStatus {
-	if wf.currentStepIndex < 0 {
-		return STEPUNKNOWN
-	}
-	if wf.currentStepIndex >= len(wf.stepList) {
-		return wf.stepStatusList[len(wf.stepList)-1]
-	} else {
-		return wf.stepStatusList[wf.currentStepIndex]
-	}
-}
-
-/*
-// ===  FUNCTION  ======================================================================
-//         Name:  GetWorkflowElapse
+//         Name:  Elapse
 //  Description:  获取上一个workflow的执行时间
 // =====================================================================================
 */
 //
-func (wf *Workflow) GetWorkflowElapse() time.Duration {
+func (wf *Workflow) Elapse() time.Duration {
 	return wf.elapse
 }
 
 /*
 // ===  FUNCTION  ======================================================================
-//         Name:  SetTimeoutWarning
+//         Name:  SetTTL
 //  Description:  设置workflow超时报警
 // =====================================================================================
 */
 //
-func (wf *Workflow) SetTimeoutWarning(ttl time.Duration) {
+func (wf *Workflow) SetTTL(ttl time.Duration) *Workflow {
 	wf.ttl = ttl
+	return wf
+}
+
+/*
+// ===  FUNCTION  ======================================================================
+//         Name:  SetTTL
+//  Description:  设置workflow超时报警
+// =====================================================================================
+*/
+//
+func (wf *Workflow) SetRetryPolicy(retryPolicy func(func() error) error) *Workflow {
+	wf.retryPolicy = retryPolicy
+	if wf.retryPolicy == nil {
+		wf.retryPolicy = wf.NoRetry
+	}
+	return wf
 }
 
 /*
