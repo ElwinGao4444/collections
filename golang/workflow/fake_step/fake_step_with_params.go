@@ -29,7 +29,7 @@ func (step *FakeStepWithParams) Error() error {
 	return nil
 }
 
-func (step *FakeStepWithParams) Before(input interface{}, params ...interface{}) (bool, error) {
+func (step *FakeStepWithParams) Before(input interface{}, params ...interface{}) error {
 	step.Data = 0
 	if input != nil {
 		if v, ok := input.(int); ok {
@@ -42,7 +42,7 @@ func (step *FakeStepWithParams) Before(input interface{}, params ...interface{})
 		}
 	}
 	step.BeforeCount++
-	return true, nil
+	return nil
 }
 
 func (step *FakeStepWithParams) DoStep(input interface{}, params ...interface{}) (interface{}, error) {
@@ -65,7 +65,7 @@ func (step *FakeStepWithParams) DoStep(input interface{}, params ...interface{})
 	return output, nil
 }
 
-func (step *FakeStepWithParams) After(input interface{}, params ...interface{}) (bool, error) {
+func (step *FakeStepWithParams) After(input interface{}, params ...interface{}) error {
 	if input != nil {
 		if v, ok := input.(int); ok {
 			step.Data += v
@@ -77,5 +77,5 @@ func (step *FakeStepWithParams) After(input interface{}, params ...interface{}) 
 		}
 	}
 	step.AfterCount++
-	return true, nil
+	return nil
 }

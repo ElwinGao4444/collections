@@ -14,6 +14,8 @@
 
 package fake_step
 
+import "errors"
+
 type FakeStepSkip struct {
 	BeforeCount int
 	DoStepCount int
@@ -29,7 +31,7 @@ func (step *FakeStepSkip) Error() error {
 	return nil
 }
 
-func (step *FakeStepSkip) Before(input interface{}, params ...interface{}) (bool, error) {
+func (step *FakeStepSkip) Before(input interface{}, params ...interface{}) error {
 	step.Data = 0
 	if input != nil {
 		if v, ok := input.(int); ok {
@@ -37,7 +39,7 @@ func (step *FakeStepSkip) Before(input interface{}, params ...interface{}) (bool
 		}
 	}
 	step.BeforeCount++
-	return false, nil
+	return errors.New("skip step")
 }
 
 func (step *FakeStepSkip) DoStep(input interface{}, params ...interface{}) (interface{}, error) {
@@ -55,12 +57,12 @@ func (step *FakeStepSkip) DoStep(input interface{}, params ...interface{}) (inte
 	return output, nil
 }
 
-func (step *FakeStepSkip) After(input interface{}, params ...interface{}) (bool, error) {
+func (step *FakeStepSkip) After(input interface{}, params ...interface{}) error {
 	if input != nil {
 		if v, ok := input.(int); ok {
 			step.Data += v
 		}
 	}
 	step.AfterCount++
-	return true, nil
+	return nil
 }

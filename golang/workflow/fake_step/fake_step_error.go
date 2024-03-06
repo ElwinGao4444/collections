@@ -30,9 +30,9 @@ func (step *FakeStepError) Error() error {
 	return nil
 }
 
-func (step *FakeStepError) Before(input interface{}, params ...interface{}) (bool, error) {
+func (step *FakeStepError) Before(input interface{}, params ...interface{}) error {
 	step.BeforeCount++
-	return true, nil
+	return nil
 }
 
 func (step *FakeStepError) DoStep(input interface{}, params ...interface{}) (interface{}, error) {
@@ -40,7 +40,7 @@ func (step *FakeStepError) DoStep(input interface{}, params ...interface{}) (int
 	return nil, errors.New("make error")
 }
 
-func (step *FakeStepError) After(input interface{}, params ...interface{}) (bool, error) {
+func (step *FakeStepError) After(input interface{}, params ...interface{}) error {
 	step.AfterCount++
-	return true, nil
+	return nil
 }

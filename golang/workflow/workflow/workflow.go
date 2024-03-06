@@ -29,24 +29,13 @@ import (
 // =====================================================================================
 type WorkStatus int
 
-const WORKINIT WorkStatus = 0      // 工作流初始化阶段
-const WORKREADY WorkStatus = 1     // 已经上了调度，准备执行
-const WORKRUNNING WorkStatus = 2   // 工作流已经启动
-const WORKFINISH WorkStatus = 3    // 工作流执行完成
-const WORKERRFINISH WorkStatus = 4 // 工作流执行失败
-const WORKUNKNOWN WorkStatus = 5   // 未知状态
-
-type StepStatus int
-
-const STEPWAIT StepStatus = 0      // 等待调度
-const STEPREADY StepStatus = 1     // 上调度，准备执行Before()
-const STEPRUNNING StepStatus = 2   // Before执行完成，开始执行任务
-const STEPDONE StepStatus = 3      // 任务执行完成，准备执行After()
-const STEPSKIP StepStatus = 4      // 任务跳过，直接进入下一步
-const STEPERROR StepStatus = 5     // 在任何阶段执行失败，都会进入STEPERROR状态
-const STEPFINISH StepStatus = 6    // 任务经过重试，最终完成
-const STEPERRFINISH StepStatus = 7 // 任务经过重试，最终失败
-const STEPUNKNOWN StepStatus = 8   // 未知状态
+const WORKINIT WorkStatus = 0          // 工作流初始阶段
+const WORKREADY WorkStatus = 1         // 工作流准备完毕
+const WORKRUNNING WorkStatus = 2       // 工作流正在执行
+const WORKFINISH WorkStatus = 3        // 工作流执行完成
+const WORKERRFINISH WorkStatus = 4     // 工作流执行失败
+const WORKTIMEOUTFINISH WorkStatus = 5 // 工作流执行超时
+const WORKUNKNOWN WorkStatus = 6       // 未知状态（保留状态）
 
 type Workflow struct {
 	// workflow名字
@@ -56,17 +45,17 @@ type Workflow struct {
 	// workflow的step列表
 	stepList []StepInterface
 	// workflow每项任务的状态列表
-	statList []StepStatus
+	stepStatus []StepStatus
 	// workflow每项任务的耗时信息
 	stepDuration []time.Duration
 	// workflow自身状态信息
 	stat WorkStatus
 	// workflow整体耗时
 	workflowDuration time.Duration
-	// workflow超时报警（单位：s）
-	workflowTimeout int
+	// workflow超时控制
+	workflowTTL time.Duration
 	// 带重试策略的step执行函数
-	runWithRetryPolicy func(func() error) error
+	retryPolicy func(func() error) error
 	// 存储相邻step之间的管道数据
 	pipeData interface{}
 }
@@ -74,37 +63,39 @@ type Workflow struct {
 /*
 // ===  FUNCTION  ======================================================================
 //         Name:  Init
-//  Description:
+//  Description:  初始化workflow
+//                name：workflow的名字
+//                ttl：超时控制，0值表示不做超时控制
+//                retryPolicy：重试策略，可以使用预制方法，也可以自定义，不重试可以传nil
 // =====================================================================================
 */
-func (wf *Workflow) Init(name string, retryPolicy string) error {
+func (wf *Workflow) Init(name string, ttl time.Duration, retryPolicy func(func() error) error) *Workflow {
 	wf.name = name
-	wf.currentStepIndex = -1
-	wf.stepList = make([]StepInterface, 0)
-	wf.statList = make([]StepStatus, 0)
-	wf.stepDuration = make([]time.Duration, 0)
-	wf.stat = WORKINIT
-	wf.workflowTimeout = 1
-
-	switch retryPolicy {
-	case "RunWithRetryOnce":
-		wf.runWithRetryPolicy = wf.runWithRetryOnce
-	default:
-		wf.runWithRetryPolicy = wf.runWithNoRetry
+	wf.workflowTTL = ttl
+	wf.retryPolicy = retryPolicy
+	if wf.retryPolicy == nil {
+		wf.retryPolicy = wf.NoRetry
 	}
-	return nil
+	wf.stepList = make([]StepInterface, 0)
+	wf.Reset()
+	wf.stat = WORKINIT
+	return wf
 }
 
 /*
 // ===  FUNCTION  ======================================================================
 //         Name:  Reset
-//  Description:
+//  Description:  重制workflow状态，以便重新执行workflow。
+//                Reset不会删除已经注册进workflow的step，只会清空执行状态
 // =====================================================================================
 */
-func (wf *Workflow) Reset() error {
+func (wf *Workflow) Reset() *Workflow {
 	wf.currentStepIndex = -1
-	wf.stat = WORKRUNNING
-	return nil
+	wf.stepStatus = make([]StepStatus, len(wf.stepList))
+	wf.stepDuration = make([]time.Duration, len(wf.stepList))
+	wf.workflowDuration = 0
+	wf.stat = WORKREADY
+	return wf
 }
 
 /*
@@ -119,30 +110,42 @@ func (wf *Workflow) Name() string {
 
 /*
 // ===  FUNCTION  ======================================================================
-//         Name:  AddStep
+//         Name:  AppendStep
 //  Description:  追加step
 // =====================================================================================
 */
-func (wf *Workflow) AddStep(step StepInterface) error {
+func (wf *Workflow) AppendStep(step StepInterface) *Workflow {
 	wf.stepList = append(wf.stepList, step)
-	wf.statList = append(wf.statList, STEPWAIT)
+	wf.stepStatus = append(wf.stepStatus, STEPWAIT)
 	wf.stepDuration = append(wf.stepDuration, 0)
-	return nil
+	return wf
 }
 
 /*
 // ===  FUNCTION  ======================================================================
-//         Name:  Ready
-//  Description:
+//         Name:  SetStepList
+//  Description:  设置step list，这个操作会覆盖workflow中已经注册的step
 // =====================================================================================
 */
-func (wf *Workflow) Ready() error {
-	if len(wf.stepList) == 0 {
-		glog.Errorf("name[%s] no step in workflow", wf.name)
-		return errors.New("no step in workflow")
+func (wf *Workflow) SetStepList(stepList []StepInterface) *Workflow {
+	wf.stepList = stepList
+	wf.stepStatus = make([]StepStatus, len(stepList))
+	wf.stepDuration = make([]time.Duration, len(stepList))
+	for i, _ := range stepList {
+		wf.stepStatus[i] = STEPWAIT
+		wf.stepDuration[i] = 0
 	}
-	wf.stat = WORKREADY
-	return nil
+	return wf
+}
+
+/*
+// ===  FUNCTION  ======================================================================
+//         Name:  SetStepList
+//  Description:  设置step list，这个操作会覆盖workflow中已经注册的step
+// =====================================================================================
+*/
+func (wf *Workflow) GetStepList() []StepInterface {
+	return wf.stepList
 }
 
 /*
@@ -151,53 +154,41 @@ func (wf *Workflow) Ready() error {
 //  Description:
 // =====================================================================================
 */
-func (wf *Workflow) Start() error {
+func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}, error) {
 	if len(wf.stepList) == 0 {
 		glog.Errorf("name[%s] no step in workflow", wf.name)
-		return errors.New("no step in workflow")
+		return nil, errors.New("no step in workflow")
 	}
+	wf.Reset()
 	wf.stat = WORKRUNNING
-	return nil
-}
 
-/*
-// ===  FUNCTION  ======================================================================
-//         Name:  DoWorkflow
-//  Description:  一次性执行全部workflow，只适用于所有step参数相同（或空参）的场景
-// =====================================================================================
-*/
-func (wf *Workflow) DoWorkflow(params ...interface{}) error {
 	var workflowTimeBegin = time.Now()
-	var stepDurationList []time.Duration = make([]time.Duration, len(wf.stepList))
+	wf.pipeData = input
 	for wf.HasNext() {
 		wf.StepNext()
 		var stepTimeBegin = time.Now()
-		if err := wf.DoStep(params...); err != nil {
-			return err
+		if err := wf.doStep(params...); err != nil {
+			return wf.pipeData, err
 		}
-		stepDurationList[wf.CurrentStep()] = time.Since(stepTimeBegin)
-	}
-	wf.workflowDuration = time.Since(workflowTimeBegin)
-	if wf.workflowDuration > time.Duration(wf.workflowTimeout)*time.Second {
-		for i, it := range stepDurationList {
-			glog.Infof("workflow[%s] step[%d](%s) finish, time used[%v]",
-				wf.name, i, wf.stepList[i].Name(), it)
+		wf.stepDuration[wf.CurrentStep()] = time.Since(stepTimeBegin)
+		wf.workflowDuration = time.Since(workflowTimeBegin)
+		if wf.workflowTTL > 0 && wf.workflowDuration > wf.workflowTTL {
+			wf.stat = WORKTIMEOUTFINISH
+			return wf.pipeData, errors.New("workflow timeout quit")
 		}
-		glog.Infof("workflow[%s] allStepCount[%d] finish, time used[%v]",
-			wf.name, len(wf.stepList), wf.workflowDuration)
 	}
-	return nil
+	return wf.pipeData, nil
 }
 
 /*
 // ===  FUNCTION  ======================================================================
-//         Name:  DoStep
+//         Name:  doStep
 //  Description:
 // =====================================================================================
 */
-func (wf *Workflow) DoStep(params ...interface{}) error {
+func (wf *Workflow) doStep(params ...interface{}) error {
 	// 参数校验
-	if wf.stat == WORKFINISH || wf.stat == WORKERRFINISH {
+	if wf.stat == WORKFINISH || wf.stat == WORKERRFINISH || wf.stat == WORKTIMEOUTFINISH {
 		glog.Error("workflow has been finished")
 		return errors.New("workflow has been finished")
 	}
@@ -210,56 +201,39 @@ func (wf *Workflow) DoStep(params ...interface{}) error {
 	stepClosure := func() error {
 		timeBegin := time.Now()
 
-		wf.statList[wf.currentStepIndex] = STEPREADY
-
-		var err error
-		var goon bool
-		var pipeData interface{}
-
 		// do before
-		if goon, err = wf.stepList[wf.currentStepIndex].Before(wf.pipeData, params...); err == nil {
-			if goon {
-				wf.statList[wf.currentStepIndex] = STEPRUNNING
-			} else {
-				wf.statList[wf.currentStepIndex] = STEPSKIP
-				return nil
-			}
-		} else {
-			wf.statList[wf.currentStepIndex] = STEPERROR
-			return err
+		wf.stepStatus[wf.currentStepIndex] = STEPREADY
+		if err := wf.stepList[wf.currentStepIndex].Before(wf.pipeData, params...); err != nil {
+			wf.stepStatus[wf.currentStepIndex] = STEPSKIP
+			wf.pipeData = err
+			return nil
 		}
 
 		// do step
-		if pipeData, err = wf.stepList[wf.currentStepIndex].DoStep(wf.pipeData, params...); err == nil {
-			wf.statList[wf.currentStepIndex] = STEPDONE
-		} else {
-			wf.statList[wf.currentStepIndex] = STEPERROR
+		wf.stepStatus[wf.currentStepIndex] = STEPRUNNING
+		var err error
+		if wf.pipeData, err = wf.stepList[wf.currentStepIndex].DoStep(wf.pipeData, params...); err != nil {
+			wf.stepStatus[wf.currentStepIndex] = STEPERROR
 			return err
 		}
 
 		// do after
-		if goon, err = wf.stepList[wf.currentStepIndex].After(wf.pipeData, params...); err == nil {
-			if goon {
-				wf.statList[wf.currentStepIndex] = STEPFINISH
-			} else {
-				wf.statList[wf.currentStepIndex] = STEPFINISH
-				wf.stat = WORKFINISH
-			}
-		} else {
-			wf.statList[wf.currentStepIndex] = STEPERROR
-			return err
+		wf.stepStatus[wf.currentStepIndex] = STEPDONE
+		if err := wf.stepList[wf.currentStepIndex].After(wf.pipeData, params...); err != nil {
+			wf.stepStatus[wf.currentStepIndex] = STEPERROR
+			wf.pipeData = err
+			return nil
 		}
 
-		// 当step成功之后，管道信息替换成新step的输出
-		wf.pipeData = pipeData
+		wf.stepStatus[wf.currentStepIndex] = STEPFINISH
 
 		wf.stepDuration[wf.currentStepIndex] = time.Since(timeBegin)
 		return nil
 	}
 
-	// 将单次执行逻辑套在重试策略之上，带着重试策略执行
-	if err := wf.runWithRetryPolicy(stepClosure); err != nil {
-		wf.statList[wf.currentStepIndex] = STEPERRFINISH
+	// 基于重试策略执行step
+	if err := wf.retryPolicy(stepClosure); err != nil {
+		wf.stepStatus[wf.currentStepIndex] = STEPERRFINISH
 		wf.stat = WORKERRFINISH
 		return err
 	}
@@ -317,14 +291,14 @@ func (wf *Workflow) CurrentStep() int {
 /*
 // ===  FUNCTION  ======================================================================
 //         Name:  CurrentStepStat
-//  Description:
+//  Description:  获取当前step的状态，如果workflow处于非运行状态，则返回STEPUNKNOWN
 // =====================================================================================
 */
 func (wf *Workflow) CurrentStepStat() StepStatus {
 	if wf.currentStepIndex < 0 {
 		return STEPUNKNOWN
 	}
-	return wf.statList[wf.currentStepIndex]
+	return wf.stepStatus[wf.currentStepIndex]
 }
 
 /*
@@ -348,9 +322,9 @@ func (wf *Workflow) LastStepStat() StepStatus {
 		return STEPUNKNOWN
 	}
 	if wf.currentStepIndex >= len(wf.stepList) {
-		return wf.statList[len(wf.stepList)-1]
+		return wf.stepStatus[len(wf.stepList)-1]
 	} else {
-		return wf.statList[wf.currentStepIndex]
+		return wf.stepStatus[wf.currentStepIndex]
 	}
 }
 
@@ -372,21 +346,18 @@ func (wf *Workflow) GetWorkflowDuration() time.Duration {
 // =====================================================================================
 */
 //
-func (wf *Workflow) SetTimeoutWarning(n int) {
-	wf.workflowTimeout = n
+func (wf *Workflow) SetTimeoutWarning(ttl time.Duration) {
+	wf.workflowTTL = ttl
 }
 
 /*
 // ===  FUNCTION  ======================================================================
-//         Name:  runWithNoRetry
+//         Name:  NoRetry
 //  Description:
 // =====================================================================================
 */
-func (wf *Workflow) runWithNoRetry(fun func() error) error {
-	if err := fun(); err != nil {
-		return err
-	}
-	return nil
+func (wf *Workflow) NoRetry(fun func() error) error {
+	return fun()
 }
 
 /*
@@ -395,11 +366,9 @@ func (wf *Workflow) runWithNoRetry(fun func() error) error {
 //  Description:
 // =====================================================================================
 */
-func (wf *Workflow) runWithRetryOnce(fun func() error) error {
+func (wf *Workflow) RetryOnce(fun func() error) error {
 	if err := fun(); err != nil {
-		if err = fun(); err != nil {
-			return err
-		}
+		return fun()
 	}
 	return nil
 }

@@ -14,6 +14,8 @@
 
 package fake_step
 
+import "fmt"
+
 type FakeStep struct {
 	BeforeCount int
 	DoStepCount int
@@ -29,38 +31,48 @@ func (step *FakeStep) Error() error {
 	return nil
 }
 
-func (step *FakeStep) Before(input interface{}, params ...interface{}) (bool, error) {
-	step.Data = 0
-	if input != nil {
-		if v, ok := input.(int); ok {
-			step.Data += v
+func (step *FakeStep) Before(input interface{}, params ...interface{}) error {
+	if len(params) > 0 {
+		switch v := params[0].(type) {
+		case error:
+			if v.Error() == "before" {
+				return v
+			}
 		}
 	}
 	step.BeforeCount++
-	return true, nil
+	return nil
 }
 
 func (step *FakeStep) DoStep(input interface{}, params ...interface{}) (interface{}, error) {
-	var output int
-	if input != nil {
-		if v, ok := input.(int); ok {
-			step.Data += v
-			v++
-			output = v
-		}
-	} else {
-		output = 1
+	switch v := input.(type) {
+	case int:
+		step.Data += v
 	}
+
+	if len(params) > 0 {
+		switch v := params[0].(type) {
+		case error:
+			if v.Error() == "step" {
+				return 0, v
+			}
+		}
+	}
+
 	step.DoStepCount++
-	return output, nil
+	return step.Data, nil
 }
 
-func (step *FakeStep) After(input interface{}, params ...interface{}) (bool, error) {
-	if input != nil {
-		if v, ok := input.(int); ok {
-			step.Data += v
+func (step *FakeStep) After(input interface{}, params ...interface{}) error {
+	if len(params) > 0 {
+		switch v := params[0].(type) {
+		case error:
+			fmt.Println("debug: inner: ", v)
+			if v.Error() == "after" {
+				return v
+			}
 		}
 	}
 	step.AfterCount++
-	return true, nil
+	return nil
 }
