@@ -61,18 +61,19 @@ type StepInterface interface {
 	//         Name:  Before
 	//  Description:  step前置操作
 	//                参数：input - 输入参数
-	//                      prams - 全局参数
-	//                返回值： 如果error不为nil，则跳过当前step，并将error作为input传递给下一个step
+	//                      params - 自定义参数
+	//                返回值: bool: 是否跳过当前step
+	//                        error: 如果error不为nil，则终止整个workflow 
 	// =====================================================================================
-	Before(input interface{}, params ...interface{}) error
+	Before(input interface{}, params ...interface{}) (bool, error)
 
 	// ===  FUNCTION  ======================================================================
 	//         Name:  DoStep
 	//  Description:  step核心过程
 	//                参数：input - 输入参数
-	//                      prams - 全局参数
+	//                      params - 自定义参数
 	//                返回值：interface{} - 当前step的输出信息，会传递给下一个step作为input
-	//                        error - step的错误信息，如果error不为nil，则会导致整个workflow终止
+	//                        error - step执行的错误信息，当error不为nil时，返回结果不置信
 	// =====================================================================================
 	DoStep(input interface{}, params ...interface{}) (interface{}, error)
 
@@ -80,10 +81,11 @@ type StepInterface interface {
 	//         Name:  After
 	//  Description:  step后置操作
 	//                参数：input - 输入参数
-	//                      prams - 全局参数
-	//                返回值： 如果error不为nil，并将error作为input传递给下一个step
+	//                      result - DoStep的返回结果
+	//                      params - 自定义参数
+	//                返回值： 如果error不为nil，则终止整个workflow 
 	// =====================================================================================
-	After(input interface{}, params ...interface{}) error
+	After(input interface{}, result interface{}, params ...interface{}) error
 }
 
 type BaseStep struct {
@@ -135,14 +137,14 @@ func (step *BaseStep) SetElapse(elapse time.Duration) {
 	step.elapse = elapse
 }
 
-func (step *BaseStep) Before() error {
-	return nil
+func (step *BaseStep) Before(input interface{}, params ...interface{}) (bool, error) {
+	return false, nil
 }
 
-func (step *BaseStep) DoStep() (interface{}, error) {
+func (step *BaseStep) DoStep(input interface{}, params ...interface{}) (interface{}, error) {
 	return nil, nil
 }
 
-func (step *BaseStep) After() error {
+func (step *BaseStep) After(input interface{}, result interface{}, params ...interface{}) error {
 	return nil
 }

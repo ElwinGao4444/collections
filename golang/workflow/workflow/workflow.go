@@ -55,8 +55,6 @@ type Workflow struct {
 	ttl time.Duration
 	// 带重试策略的step执行函数
 	retryPolicy func(func() error) error
-	// 存储相邻step之间的管道数据
-	pipeData interface{}
 	// 用户处理并发step的同步机制
 	waitGroup *sync.WaitGroup
 }
@@ -176,115 +174,93 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 		wf.waitGroup.Add(1)
 		go func(step StepInterface) {
 			defer wf.waitGroup.Done()
-
-			var res interface{}
-			var err error
-			if err = step.Before(input, params...); err != nil {
-				step.SetError(err)
-				return
-			}
-			res, err = step.DoStep(input, params...)
-			step.SetResult(res)
-			step.SetError(err)
-			if err != nil {
-				return
-			}
-			if err := step.After(input, params...); err != nil {
-				step.SetError(err)
-				return
-			}
-			step.SetElapse(time.Since(workflowTimeBegin))
+			wf.doStep(step, input, params...)
 		}(step)
 	}
 
 	// 处理同步step
-	wf.pipeData = input
+	var result interface{}
+	var err error
 	for wf.HasNext() {
 		var step = wf.StepNext()
-		var stepTimeBegin = time.Now()
-		if err := wf.doStep(params...); err != nil {
-			return wf.pipeData, err
+		result, err = wf.doStep(wf.CurrentStep(), input, params...)
+		if step.Error() != nil {
+			return result, err
 		}
-		step.SetElapse(time.Since(stepTimeBegin))
 		wf.elapse = time.Since(workflowTimeBegin)
 		if wf.ttl > 0 && wf.elapse > wf.ttl {
 			wf.status = WORKTIMEOUTFINISH
-			return wf.pipeData, errors.New("workflow timeout")
+			return result, errors.New("workflow timeout")
 		}
+		input = result
 	}
 
 	wf.waitGroup.Wait()
+	wf.status = WORKFINISH
 	wf.elapse = time.Since(workflowTimeBegin)
-	return wf.pipeData, nil
+	return result, nil
 }
 
 /*
 // ===  FUNCTION  ======================================================================
 //         Name:  doStep
-//  Description:
+//  Description:  执行指定step
 // =====================================================================================
 */
-func (wf *Workflow) doStep(params ...interface{}) error {
-	// 参数校验
-	if wf.status == WORKFINISH || wf.status == WORKERRFINISH || wf.status == WORKTIMEOUTFINISH {
-		glog.Error("workflow has been finished")
-		return errors.New("workflow has been finished")
+func (wf *Workflow) doStep(step StepInterface, input interface{}, params ...interface{}) (interface{}, error) {
+	if step == nil {
+		glog.Errorf("currentStepIndex[%d] is outof range[%d]", wf.currentStepIndex, len(wf.stepList))
+		return nil, errors.New("currentStepIndex is outof range")
 	}
 
-	var currentStep = wf.CurrentStep()
-	if currentStep == nil {
-		glog.Errorf("currentStepIndex[%d] is outof range[%d]", wf.currentStepIndex, len(wf.stepList))
-		return errors.New("currentStepIndex is outof range")
-	}
 
 	// 创建step单次执行逻辑闭包
+	var err error
+	var result interface{} = nil
+	defer func() {step.SetError(err)}()
+	defer func() {step.SetResult(result)}()
 	stepClosure := func() error {
-		var err error
-		defer currentStep.SetError(err)
-
-		timeBegin := time.Now()
+		var skip bool
 
 		// do before
-		currentStep.SetStatus(STEPREADY)
-		if err = currentStep.Before(wf.pipeData, params...); err != nil {
-			currentStep.SetStatus(STEPSKIP)
-			wf.pipeData = err
+		step.SetStatus(STEPREADY)
+		skip, err = step.Before(input, params...)
+		if err != nil {
+			step.SetStatus(STEPERROR)
+			return err
+		}
+		if skip {
+			step.SetStatus(STEPSKIP)
 			return nil
 		}
 
 		// do step
-		currentStep.SetStatus(STEPRUNNING)
-		if wf.pipeData, err = currentStep.DoStep(wf.pipeData, params...); err != nil {
-			currentStep.SetStatus(STEPERROR)
+		step.SetStatus(STEPRUNNING)
+		if result, err = step.DoStep(input, params...); err != nil {
+			step.SetStatus(STEPERROR)
 			return err
 		}
 
 		// do after
-		currentStep.SetStatus(STEPDONE)
-		if err = currentStep.After(wf.pipeData, params...); err != nil {
-			currentStep.SetStatus(STEPERROR)
-			wf.pipeData = err
+		step.SetStatus(STEPDONE)
+		if err = step.After(input, result, params...); err != nil {
+			step.SetStatus(STEPERROR)
 			return nil
 		}
 
-		currentStep.SetStatus(STEPFINISH)
-
-		currentStep.SetElapse(time.Since(timeBegin))
 		return nil
 	}
 
 	// 基于重试策略执行step
+	timeBegin := time.Now()
+	defer func() {step.SetElapse(time.Since(timeBegin))}()
 	if err := wf.retryPolicy(stepClosure); err != nil {
-		currentStep.SetStatus(STEPERRFINISH)
+		step.SetStatus(STEPERRFINISH)
 		wf.status = WORKERRFINISH
-		return err
+		return result, err
 	}
-
-	if wf.currentStepIndex == len(wf.stepList)-1 {
-		wf.status = WORKFINISH
-	}
-
-	return nil
+	step.SetStatus(STEPFINISH)
+	return result, nil
 }
 
 /*
