@@ -129,6 +129,7 @@ func (wf *Workflow) AppendStep(step StepInterface) *Workflow {
 // =====================================================================================
 */
 func (wf *Workflow) AppendAsyncStep(step StepInterface) *Workflow {
+	step.SetStatus(STEPWAIT)
 	wf.stepAsyncList = append(wf.stepAsyncList, step)
 	return wf
 }
