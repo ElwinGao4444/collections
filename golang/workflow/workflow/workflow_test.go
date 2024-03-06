@@ -215,6 +215,17 @@ func TestWorkflowAsyncStep(t *testing.T) {
 	}
 }
 
+func BenchmarkDoStep(b *testing.B) {
+	b.ResetTimer()
+
+	var step *FakeStep = new(FakeStep)
+	var wf *Workflow = new(Workflow)
+	wf.Init("test")
+	for i := 0; i < b.N; i++ {
+		wf.doStep(step, 0)
+	}
+}
+
 func BenchmarkWorkflow(b *testing.B) {
 	b.ResetTimer()
 
