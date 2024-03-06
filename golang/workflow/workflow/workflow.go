@@ -75,9 +75,8 @@ func (wf *Workflow) Init(name string) *Workflow {
 	wf.name = name
 	wf.ttl = 0
 	wf.retryPolicy = wf.NoRetry
-	wf.stepList = make([]StepInterface, 0)
+	// wf.stepList = make([]StepInterface, 0)
 	// wf.stepAsyncList = make([]StepInterface, 0)
-	wf.stepAsyncList = nil
 	wf.waitGroup = new(sync.WaitGroup)
 	wf.Reset()
 	wf.status = WORKINIT
@@ -193,7 +192,7 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 				step.SetError(err)
 				return
 			}
-			fmt.Println("debug: ", step.Result(), step.Error())
+			fmt.Println("debug1: ", step.Result(), step.Error())
 		}()
 	}
 
@@ -214,6 +213,11 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 	}
 
 	wf.waitGroup.Wait()
+
+	for _, step := range wf.stepAsyncList {
+		fmt.Println("debug2: ", step.Result(), step.Error())
+	}
+
 	wf.elapse = time.Since(workflowTimeBegin)
 	return wf.pipeData, nil
 }
