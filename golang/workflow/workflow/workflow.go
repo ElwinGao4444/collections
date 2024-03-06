@@ -16,6 +16,7 @@ package workflow
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -75,6 +76,8 @@ func (wf *Workflow) Init(name string) *Workflow {
 	wf.ttl = 0
 	wf.retryPolicy = wf.NoRetry
 	wf.stepList = make([]StepInterface, 0)
+	// wf.stepAsyncList = make([]StepInterface, 0)
+	wf.stepAsyncList = nil
 	wf.waitGroup = new(sync.WaitGroup)
 	wf.Reset()
 	wf.status = WORKINIT
@@ -127,7 +130,7 @@ func (wf *Workflow) AppendStep(step StepInterface) *Workflow {
 // =====================================================================================
 */
 func (wf *Workflow) AppendAsyncStep(step StepInterface) *Workflow {
-	wf.stepAsyncList = append(wf.stepList, step)
+	wf.stepAsyncList = append(wf.stepAsyncList, step)
 	return wf
 }
 
@@ -168,26 +171,33 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 
 	var workflowTimeBegin = time.Now()
 
-	for i, step := range wf.stepAsyncList {
+	// 处理异步step
+	for _, step := range wf.stepAsyncList {
 		wf.waitGroup.Add(1)
-		go func(idx int) {
+		go func() {
 			defer wf.waitGroup.Done()
-			if err := step.Before(input, params...); err != nil {
+
+			var res interface{}
+			var err error
+			if err = step.Before(input, params...); err != nil {
 				step.SetError(err)
 				return
 			}
-			if res, err := step.DoStep(input, params...); err != nil {
-				wf.stepAsyncList[idx].SetResult(res)
-				step.SetError(err)
+			res, err = step.DoStep(input, params...)
+			step.SetResult(res)
+			step.SetError(err)
+			if err != nil {
 				return
 			}
 			if err := step.After(input, params...); err != nil {
 				step.SetError(err)
 				return
 			}
-		}(i)
+			fmt.Println("debug: ", step.Result(), step.Error())
+		}()
 	}
 
+	// 处理同步step
 	wf.pipeData = input
 	for wf.HasNext() {
 		wf.StepNext()

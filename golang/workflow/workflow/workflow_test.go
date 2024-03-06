@@ -16,6 +16,7 @@ package workflow
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -121,12 +122,14 @@ func TestWorkflowAsyncStep(t *testing.T) {
 		AppendAsyncStep(new(FakeStep)).
 		AppendAsyncStep(new(FakeStep))
 	for _, step := range wf.stepAsyncList {
-		assert.Equal(t, step.Result(), 0, "test fake step")
+		assert.Equal(t, step.Result(), nil, "test fake step")
 	}
 	wf.Start(0, time.Duration(20)*time.Millisecond)
 	assert.Less(t, wf.elapse, time.Duration(25)*time.Millisecond, "test fake step")
 	for _, step := range wf.stepAsyncList {
-		assert.Equal(t, step.Result(), 1, "test fake step")
+		fmt.Println("debug: ", step.Result(), step.Error())
+		assert.Equal(t, step.Result(), 1, "test async step result")
+		assert.Equal(t, step.Error(), nil, "test async step error")
 	}
 }
 

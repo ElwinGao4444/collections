@@ -15,7 +15,6 @@
 package workflow
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -65,7 +64,6 @@ func (step *FakeStep) After(input interface{}, params ...interface{}) error {
 	if len(params) > 0 {
 		switch v := params[0].(type) {
 		case error:
-			fmt.Println("debug: inner: ", v)
 			if v.Error() == "after" {
 				return v
 			}
