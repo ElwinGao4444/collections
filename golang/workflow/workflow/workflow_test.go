@@ -16,8 +16,8 @@ package workflow
 
 import (
 	"errors"
-	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -105,16 +105,15 @@ func TestWorkflowSkipAndError(t *testing.T) {
 	assert.Equal(t, step.AfterCount, 0, "test fake step")
 }
 
-func TestWorkflowTimeDuration(t *testing.T) {
+func TestWorkflowTimeout(t *testing.T) {
 	var wf = new(Workflow).
-		Init("test", 0, nil).
+		Init("test", time.Duration(100)*time.Millisecond, nil).
 		AppendStep(new(FakeStep)).
 		AppendStep(new(FakeStep)).
 		AppendStep(new(FakeStep))
-	wf.Start(0)
-	fmt.Println(wf.stepStatusList)
-	fmt.Println(wf.stepElapseList)
-	fmt.Println(wf.elapse)
+	result, err := wf.Start(0, time.Duration(50)*time.Millisecond)
+	assert.Equal(t, err.Error(), "workflow timeout", "test workflow timeout")
+	assert.Equal(t, result.(int), 2, "test workflow timeout")
 }
 
 func BenchmarkWorkflow(b *testing.B) {

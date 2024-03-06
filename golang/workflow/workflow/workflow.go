@@ -190,7 +190,7 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 		wf.elapse = time.Since(workflowTimeBegin)
 		if wf.ttl > 0 && wf.elapse > wf.ttl {
 			wf.status = WORKTIMEOUTFINISH
-			return wf.pipeData, errors.New("workflow timeout quit")
+			return wf.pipeData, errors.New("workflow timeout")
 		}
 	}
 	return wf.pipeData, nil
