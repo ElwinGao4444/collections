@@ -223,7 +223,7 @@ func BenchmarkWorkflow(b *testing.B) {
 	wf.Init("test")
 	wf.SetStepList([]StepInterface{step, step, step, step, step})
 	for i := 0; i < b.N; i++ {
-		wf.Start(nil)
 		wf.Reset()
+		wf.Start(nil)
 	}
 }
