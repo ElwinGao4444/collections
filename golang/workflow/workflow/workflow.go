@@ -195,6 +195,9 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 			fmt.Println("debug1: ", step.Result(), step.Error())
 		}()
 	}
+	for _, step := range wf.stepAsyncList {
+		fmt.Println("debug3: ", step.Result(), step.Error())
+	}
 
 	// 处理同步step
 	wf.pipeData = input
