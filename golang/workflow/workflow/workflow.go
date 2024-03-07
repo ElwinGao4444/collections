@@ -172,6 +172,7 @@ func (wf *Workflow) Start(ctx context.Context, params ...interface{}) (context.C
 	wf.status = WORKRUNNING
 
 	var workflowTimeBegin = time.Now()
+	defer func() { wf.elapse = time.Since(workflowTimeBegin) }()
 
 	// 处理异步step
 	for _, step := range wf.asyncStepList {
@@ -198,9 +199,18 @@ func (wf *Workflow) Start(ctx context.Context, params ...interface{}) (context.C
 		}
 	}
 
-	wf.waitGroup.Wait()
-	wf.status = WORKFINISH
-	wf.elapse = time.Since(workflowTimeBegin)
+	var waitGroupChan = make(chan struct{})
+	go func() {
+		wf.waitGroup.Wait()
+		waitGroupChan <- struct{}{}
+	}()
+	select {
+	case <-ctx.Done():
+		wf.status = WORKCANCEL
+		return ctx, errors.New("workflow canceled")
+	case <-waitGroupChan:
+		wf.status = WORKFINISH
+	}
 	return ctx, nil
 }
 

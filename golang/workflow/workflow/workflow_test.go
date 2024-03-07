@@ -16,7 +16,6 @@ package workflow
 
 import (
 	"context"
-	"errors"
 	"strconv"
 	"testing"
 	"time"
@@ -124,7 +123,7 @@ func TestWorkflowError(t *testing.T) {
 	// do step error
 	wf = new(Workflow).Init("test").AppendStep(new(FakeStep)).AppendStep(new(FakeStep))
 	ctx = context.WithValue(ctx, "error", "Process")
-	ctx, err = wf.Start(ctx, 1, errors.New("step"))
+	ctx, err = wf.Start(ctx, 1)
 	assert.Equal(t, ctx.Value("value").(int), 1, "workflow step error")
 	assert.Equal(t, err.Error(), "Process Error", "workflow step error")
 	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).BeforeCount, 1, "fake step")
@@ -144,7 +143,7 @@ func TestWorkflowError(t *testing.T) {
 	// after error
 	wf = new(Workflow).Init("test").AppendStep(new(FakeStep)).AppendStep(new(FakeStep))
 	ctx = context.WithValue(ctx, "error", "PostProcess")
-	ctx, err = wf.Start(ctx, 1, errors.New("after"))
+	ctx, err = wf.Start(ctx, 1)
 	assert.Equal(t, ctx.Value("value").(int), 2, "workflow step error")
 	assert.Equal(t, err.Error(), "PostProcess Error", "workflow step skip")
 	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).BeforeCount, 1, "fake step")
@@ -172,10 +171,10 @@ func TestWorkflowTimeout(t *testing.T) {
 		AppendStep(new(FakeStep))
 	ctx = context.Background()
 	ctx = context.WithValue(ctx, "value", 1)
-	ctx = context.WithValue(ctx, "sleep", 50*time.Millisecond)
-	ctx, cancel = context.WithTimeout(ctx, 100*time.Millisecond)
+	ctx = context.WithValue(ctx, "sleep", time.Duration(50)*time.Millisecond)
+	ctx, cancel = context.WithTimeout(ctx, time.Duration(100)*time.Millisecond)
 	defer cancel()
-	ctx, err := wf.Start(ctx, 0, time.Duration(50)*time.Millisecond)
+	ctx, err := wf.Start(ctx, 0)
 	assert.Equal(t, err.Error(), "workflow canceled", "workflow timeout")
 	assert.Equal(t, ctx.Value("value").(int), 3, "workflow timeout")
 	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Error(), nil, "fake step")
@@ -188,6 +187,27 @@ func TestWorkflowTimeout(t *testing.T) {
 	assert.Equal(t, wf.GetStepList()[2].(*FakeStep).Status(), STEPWAIT, "fake step")
 	assert.Equal(t, wf.GetStepList()[2].(*FakeStep).Result(), nil, "fake step")
 	assert.Equal(t, wf.Status(), WORKCANCEL, "workflow timeout")
+	assert.Less(t, wf.Elapse(), time.Duration(120)*time.Millisecond, "workflow timeout")
+}
+
+func TestWorkflowAsyncTimeout(t *testing.T) {
+	var ctx context.Context
+	var cancel context.CancelFunc
+	var step = new(FakeStep)
+	var wf = new(Workflow).Init("test").AppendAsyncStep(step)
+	ctx = context.Background()
+	ctx = context.WithValue(ctx, "value", 1)
+	ctx = context.WithValue(ctx, "sleep", 1000*time.Millisecond)
+	ctx, cancel = context.WithTimeout(ctx, 100*time.Millisecond)
+	defer cancel()
+	ctx, err := wf.Start(ctx, 0)
+	assert.Equal(t, err.Error(), "workflow canceled", "workflow timeout")
+	assert.Equal(t, ctx.Value("value").(int), 1, "workflow timeout")
+	assert.Equal(t, step.Error(), nil, "fake step")
+	assert.Equal(t, step.Status(), STEPRUNNING, "fake step")
+	assert.Equal(t, step.Result(), nil, "fake step")
+	assert.Equal(t, wf.Status(), WORKCANCEL, "workflow timeout")
+	assert.Less(t, wf.Elapse(), time.Duration(120)*time.Millisecond, "workflow timeout")
 }
 
 func TestWorkflowAsyncStep(t *testing.T) {
