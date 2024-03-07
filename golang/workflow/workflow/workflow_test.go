@@ -36,162 +36,140 @@ func TestWorkflowBasic(t *testing.T) {
 	assert.Equal(t, wf.status, WORKINIT, "init status")
 	assert.Equal(t, wf.currentStepIndex, -1, "init step index")
 	assert.Equal(t, wf.CurrentStep(), nil, "init current step")
-	result, _ := wf.Start(context.Background(), 0)
-	assert.Equal(t, result.(int), 3, "workflow result")
-	var elapseSum time.Duration
+	ctx, _ := wf.Start(context.WithValue(context.Background(), "value", 1))
+	assert.Equal(t, ctx.Value("value").(int), 4, "workflow result")
 	for i, step := range wf.GetStepList() {
 		assert.Equal(t, step.Name(), strconv.Itoa(i), "step name")
 		assert.Equal(t, step.Error(), nil, "step error")
 		assert.Equal(t, step.Status(), STEPFINISH, "step status")
-		assert.Equal(t, step.Result(), i+1, "step result")
-		assert.Greater(t, step.Elapse(), time.Duration(0), "step elapse")
+		assert.Equal(t, step.Result().Value("value").(int), i+2, "step result")
 		assert.Equal(t, step.(*FakeStep).BeforeCount, 1, "fake step before")
 		assert.Equal(t, step.(*FakeStep).DoStepCount, 1, "fake step do step")
 		assert.Equal(t, step.(*FakeStep).AfterCount, 1, "fake step after")
-		assert.Equal(t, step.(*FakeStep).Data, i+1, "fake step data")
-		elapseSum += step.Elapse()
 	}
+
 	assert.Equal(t, wf.Status(), WORKFINISH, "workflow stat")
-	assert.Greater(t, wf.Elapse(), elapseSum, "workflow elapse")
 }
 
 func TestWorkflowDoStep(t *testing.T) {
 	var wf *Workflow = new(Workflow)
 	wf.Init("test").AppendStep(new(FakeStep)).AppendStep(new(FakeStep)).AppendStep(new(FakeStep))
 	wf.status = WORKRUNNING
-	var input interface{} = 0
-	var ctx = context.Background()
+	var ctx = context.WithValue(context.Background(), "value", 1)
 	for i := 0; i < 3; i++ {
 		assert.Equal(t, wf.HasNext(), true, "has next")
 		var step = wf.StepNext().(*FakeStep)
 		assert.NotNil(t, step, nil, "get next step")
-		result, err := wf.doStep(step, ctx, input)
-		assert.Equal(t, result, i+1, "step result")
+		var err error
+		ctx, err = wf.doStep(step, ctx)
+		assert.Equal(t, ctx.Value("value").(int), i+2, "step result")
 		assert.Equal(t, err, nil, "step err")
 		assert.Equal(t, step.BeforeCount, 1, "fake step before")
 		assert.Equal(t, step.DoStepCount, 1, "fake step do step")
 		assert.Equal(t, step.AfterCount, 1, "fake step after")
-		assert.Equal(t, step.Data, i+1, "fake step data")
 		assert.Equal(t, wf.currentStepIndex, i, "current index")
 		assert.Equal(t, wf.CurrentStep().Status(), STEPFINISH, "current step stat")
 		assert.Equal(t, step.Error(), nil, "step error")
 		assert.Equal(t, step.Status(), STEPFINISH, "step status")
-		assert.Equal(t, step.Result(), i+1, "step result")
-		input = result
+		assert.Equal(t, step.Result().Value("value").(int), i+2, "step result")
 	}
 	assert.Equal(t, wf.HasNext(), false, "has next")
 }
 
-func TestWorkflowSkipAndError(t *testing.T) {
+func TestWorkflowError(t *testing.T) {
 	var wf *Workflow
-	var result interface{}
+	var ctx context.Context
 	var err error
-
-	// before skip
-	wf = new(Workflow).Init("test").AppendStep(new(FakeStep)).AppendStep(new(FakeStep))
-	result, err = wf.Start(context.Background(), nil, true)
-	assert.Equal(t, result.(int), 3, "workflow step skip")
-	assert.Equal(t, err, nil, "workflow step skip")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).BeforeCount, 0, "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).DoStepCount, 0, "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).AfterCount, 0, "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Data, 0, "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Error(), nil, "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Status(), STEPSKIP, "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Result(), 2, "fake step")
-	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).BeforeCount, 1, "fake step")
-	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).DoStepCount, 1, "fake step")
-	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).AfterCount, 1, "fake step")
-	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Data, 3, "fake step")
-	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Error(), nil, "fake step")
-	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Status(), STEPFINISH, "fake step")
-	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Result(), 3, "fake step")
-	assert.Equal(t, wf.Status(), WORKFINISH, "workflow status")
 
 	// before error
 	wf = new(Workflow).Init("test").AppendStep(new(FakeStep)).AppendStep(new(FakeStep))
-	result, err = wf.Start(context.Background(), nil, errors.New("before"))
-	assert.Equal(t, result.(int), 0, "workflow step skip")
-	assert.Equal(t, err.Error(), "before", "workflow step skip")
+	ctx = context.Background()
+	ctx = context.WithValue(ctx, "value", 1)
+	ctx = context.WithValue(ctx, "error", "PreProcess")
+	ctx, err = wf.Start(ctx)
+	assert.Equal(t, ctx.Value("value").(int), 1, "workflow step error")
+	assert.Equal(t, err.Error(), "PreProcess Error", "workflow step error")
 	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).BeforeCount, 0, "fake step")
 	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).DoStepCount, 0, "fake step")
 	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).AfterCount, 0, "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Data, 0, "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Error().Error(), "before", "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Status(), STEPERRFINISH, "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Result(), 0, "fake step")
+	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Error().Error(), "PreProcess Error", "fake step")
+	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Status(), STEPERROR, "fake step")
+	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Result().Value("value").(int), 1, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).BeforeCount, 0, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).DoStepCount, 0, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).AfterCount, 0, "fake step")
-	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Data, 0, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Error(), nil, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Status(), STEPWAIT, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Result(), nil, "fake step")
-	assert.Equal(t, wf.Status(), WORKERRFINISH, "workflow status")
+	assert.Equal(t, wf.Status(), WORKERROR, "workflow status")
 
 	// do step error
 	wf = new(Workflow).Init("test").AppendStep(new(FakeStep)).AppendStep(new(FakeStep))
-	result, err = wf.Start(context.Background(), 1, errors.New("step"))
-	assert.Equal(t, result.(int), 0, "workflow step error")
-	assert.Equal(t, err.Error(), "step", "workflow step error")
+	ctx = context.WithValue(ctx, "error", "Process")
+	ctx, err = wf.Start(ctx, 1, errors.New("step"))
+	assert.Equal(t, ctx.Value("value").(int), 1, "workflow step error")
+	assert.Equal(t, err.Error(), "Process Error", "workflow step error")
 	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).BeforeCount, 1, "fake step")
 	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).DoStepCount, 0, "fake step")
 	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).AfterCount, 0, "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Data, 2, "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Error().Error(), "step", "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Status(), STEPERRFINISH, "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Result(), 0, "fake step")
+	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Error().Error(), "Process Error", "fake step")
+	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Status(), STEPERROR, "fake step")
+	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Result().Value("value").(int), 1, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).BeforeCount, 0, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).DoStepCount, 0, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).AfterCount, 0, "fake step")
-	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Data, 0, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Error(), nil, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Status(), STEPWAIT, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Result(), nil, "fake step")
-	assert.Equal(t, wf.Status(), WORKERRFINISH, "workflow status")
+	assert.Equal(t, wf.Status(), WORKERROR, "workflow status")
 
 	// after error
 	wf = new(Workflow).Init("test").AppendStep(new(FakeStep)).AppendStep(new(FakeStep))
-	result, err = wf.Start(context.Background(), 1, errors.New("after"))
-	assert.Equal(t, result.(int), 2, "workflow step after error")
-	assert.Equal(t, err.Error(), "after", "workflow step skip")
+	ctx = context.WithValue(ctx, "error", "PostProcess")
+	ctx, err = wf.Start(ctx, 1, errors.New("after"))
+	assert.Equal(t, ctx.Value("value").(int), 2, "workflow step error")
+	assert.Equal(t, err.Error(), "PostProcess Error", "workflow step skip")
 	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).BeforeCount, 1, "fake step")
 	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).DoStepCount, 1, "fake step")
 	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).AfterCount, 0, "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Data, 2, "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Error().Error(), "after", "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Status(), STEPERRFINISH, "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Result(), 2, "fake step")
+	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Error().Error(), "PostProcess Error", "fake step")
+	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Status(), STEPERROR, "fake step")
+	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Result().Value("value").(int), 2, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).BeforeCount, 0, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).DoStepCount, 0, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).AfterCount, 0, "fake step")
-	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Data, 0, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Error(), nil, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Status(), STEPWAIT, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Result(), nil, "fake step")
-	assert.Equal(t, wf.Status(), WORKERRFINISH, "workflow status")
+	assert.Equal(t, wf.Status(), WORKERROR, "workflow status")
 }
 
 func TestWorkflowTimeout(t *testing.T) {
+	var ctx context.Context
+	var cancel context.CancelFunc
 	var wf = new(Workflow).
 		Init("test").
-		SetTTL(time.Duration(100) * time.Millisecond).
 		AppendStep(new(FakeStep)).
 		AppendStep(new(FakeStep)).
 		AppendStep(new(FakeStep))
-	result, err := wf.Start(context.Background(), 0, time.Duration(50)*time.Millisecond)
-	assert.Equal(t, err.Error(), "workflow timeout", "workflow timeout")
-	assert.Equal(t, result.(int), 2, "workflow timeout")
+	ctx = context.Background()
+	ctx = context.WithValue(ctx, "value", 1)
+	ctx = context.WithValue(ctx, "sleep", 50*time.Millisecond)
+	ctx, cancel = context.WithTimeout(ctx, 100*time.Millisecond)
+	defer cancel()
+	ctx, err := wf.Start(ctx, 0, time.Duration(50)*time.Millisecond)
+	assert.Equal(t, err.Error(), "workflow canceled", "workflow timeout")
+	assert.Equal(t, ctx.Value("value").(int), 3, "workflow timeout")
 	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Error(), nil, "fake step")
 	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Status(), STEPFINISH, "fake step")
-	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Result(), 1, "fake step")
+	assert.Equal(t, wf.GetStepList()[0].(*FakeStep).Result().Value("value").(int), 2, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Error(), nil, "fake step")
 	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Status(), STEPFINISH, "fake step")
-	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Result(), 2, "fake step")
+	assert.Equal(t, wf.GetStepList()[1].(*FakeStep).Result().Value("value").(int), 3, "fake step")
 	assert.Equal(t, wf.GetStepList()[2].(*FakeStep).Error(), nil, "fake step")
 	assert.Equal(t, wf.GetStepList()[2].(*FakeStep).Status(), STEPWAIT, "fake step")
 	assert.Equal(t, wf.GetStepList()[2].(*FakeStep).Result(), nil, "fake step")
-	assert.Equal(t, wf.Status(), WORKTIMEOUTFINISH, "workflow timeout")
+	assert.Equal(t, wf.Status(), WORKCANCEL, "workflow timeout")
 }
 
 func TestWorkflowAsyncStep(t *testing.T) {
@@ -205,10 +183,14 @@ func TestWorkflowAsyncStep(t *testing.T) {
 		assert.Equal(t, step.Error(), nil, "async step error")
 		assert.Equal(t, step.Status(), STEPWAIT, "async step status")
 	}
-	wf.Start(context.Background(), 0, time.Duration(20)*time.Millisecond)
+	var ctx context.Context
+	ctx = context.Background()
+	ctx = context.WithValue(ctx, "value", 1)
+	ctx = context.WithValue(ctx, "sleep", 20*time.Millisecond)
+	wf.Start(ctx)
 	assert.Less(t, wf.elapse, time.Duration(25)*time.Millisecond, "fake step")
 	for _, step := range wf.stepAsyncList {
-		assert.Equal(t, step.Result(), 1, "async step result")
+		assert.Equal(t, step.Result().Value("value").(int), 2, "async step result")
 		assert.Equal(t, step.Error(), nil, "async step error")
 		assert.Equal(t, step.Status(), STEPFINISH, "async step status")
 	}

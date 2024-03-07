@@ -16,6 +16,7 @@ package workflow
 
 import (
 	"context"
+	"errors"
 	"time"
 )
 
@@ -24,7 +25,6 @@ type FakeStep struct {
 	BeforeCount int
 	DoStepCount int
 	AfterCount  int
-	Data        int
 }
 
 func (step *FakeStep) SetName(name string) StepInterface {
@@ -32,54 +32,38 @@ func (step *FakeStep) SetName(name string) StepInterface {
 	return step
 }
 
-func (step *FakeStep) PreProcess(ctx context.Context, input interface{}, shared ...interface{}) (interface{}, error) {
-	if len(shared) > 0 {
-		switch v := shared[0].(type) {
-		case error:
-			if v.Error() == "before" {
-				return 0, v
-			}
-		case bool:
-			if v == true {
-				shared[0] = false
-				return 2, nil
-			}
+func (step *FakeStep) PreProcess(ctx context.Context, params ...interface{}) (context.Context, error) {
+	if v := ctx.Value("error"); v != nil {
+		if v.(string) == "PreProcess" {
+			return ctx, errors.New("PreProcess Error")
 		}
 	}
 	step.BeforeCount++
-	return nil, nil
+	return ctx, nil
 }
 
-func (step *FakeStep) Process(ctx context.Context, input interface{}, shared ...interface{}) (interface{}, error) {
-	switch v := input.(type) {
-	case int:
-		step.Data = v + 1
-	}
-
-	if len(shared) > 0 {
-		switch v := shared[0].(type) {
-		case error:
-			if v.Error() == "step" {
-				return 0, v
-			}
-		case time.Duration:
-			time.Sleep(v)
+func (step *FakeStep) Process(ctx context.Context, params ...interface{}) (context.Context, error) {
+	if v := ctx.Value("error"); v != nil {
+		if v.(string) == "Process" {
+			return ctx, errors.New("Process Error")
 		}
 	}
-
+	if v := ctx.Value("sleep"); v != nil {
+		time.Sleep(v.(time.Duration))
+	}
+	if v := ctx.Value("value"); v != nil {
+		ctx = context.WithValue(ctx, "value", v.(int)+1)
+	}
 	step.DoStepCount++
-	return step.Data, nil
+	return ctx, nil
 }
 
-func (step *FakeStep) PostProcess(ctx context.Context, input interface{}, result interface{}, shared ...interface{}) error {
-	if len(shared) > 0 {
-		switch v := shared[0].(type) {
-		case error:
-			if v.Error() == "after" {
-				return v
-			}
+func (step *FakeStep) PostProcess(ctx context.Context, params ...interface{}) (context.Context, error) {
+	if v := ctx.Value("error"); v != nil {
+		if v.(string) == "PostProcess" {
+			return ctx, errors.New("PostProcess Error")
 		}
 	}
 	step.AfterCount++
-	return nil
+	return ctx, nil
 }
