@@ -34,6 +34,9 @@ const STEPERROR StepStatus = 5   // 在任何阶段执行失败，都会进入ST
 // =====================================================================================
 */
 type StepInterface interface {
+	// 深拷贝
+	Copy() StepInterface
+
 	// step的名字
 	Name() string
 	SetName(name string) StepInterface
@@ -105,6 +108,12 @@ type BaseStep struct {
 	simplePreProcess  func(ctx context.Context, params ...interface{}) (context.Context, error)
 	simpleProcess     func(ctx context.Context, params ...interface{}) (context.Context, error)
 	simplePostProcess func(ctx context.Context, params ...interface{}) (context.Context, error)
+}
+
+func (step *BaseStep) Copy() StepInterface {
+	var copyStep BaseStep
+	copyStep = *step
+	return &copyStep
 }
 
 func (step *BaseStep) Name() string {
