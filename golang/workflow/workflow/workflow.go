@@ -220,7 +220,7 @@ func (wf *Workflow) doStep(step StepInterface, input interface{}, params ...inte
 	stepClosure := func() error {
 		// do before
 		step.SetStatus(STEPREADY)
-		result, err = step.Before(input, params...)
+		result, err = step.PreProcess(input, params...)
 		if err != nil {
 			step.SetStatus(STEPERROR)
 			return err
@@ -232,14 +232,14 @@ func (wf *Workflow) doStep(step StepInterface, input interface{}, params ...inte
 
 		// do step
 		step.SetStatus(STEPRUNNING)
-		if result, err = step.DoStep(input, params...); err != nil {
+		if result, err = step.Process(input, params...); err != nil {
 			step.SetStatus(STEPERROR)
 			return err
 		}
 
 		// do after
 		step.SetStatus(STEPDONE)
-		if err = step.After(input, result, params...); err != nil {
+		if err = step.PostProcess(input, result, params...); err != nil {
 			step.SetStatus(STEPERROR)
 			return err
 		}
