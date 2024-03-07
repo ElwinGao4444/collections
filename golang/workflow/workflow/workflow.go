@@ -199,6 +199,7 @@ func (wf *Workflow) Start(ctx context.Context, params ...interface{}) (context.C
 		}
 	}
 
+	// 同时等待waitGroup和context的Done，使waitGroup具备超时的能力
 	var waitGroupChan = make(chan struct{})
 	go func() {
 		wf.waitGroup.Wait()
