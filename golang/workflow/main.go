@@ -3,11 +3,32 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 	"workflow/workflow"
 )
 
+type DemoStep struct {
+	workflow.BaseStep
+}
+
+func (step *DemoStep) PreProcess(ctx context.Context, params ...interface{}) (context.Context, error) {
+	fmt.Println("PreProcess: ", time.Now())
+	return ctx, nil
+}
+
+func (step *DemoStep) Process(ctx context.Context, params ...interface{}) (context.Context, error) {
+	fmt.Println("Process: ", time.Now())
+	return ctx, nil
+}
+
+func (step *DemoStep) PostProcess(ctx context.Context, params ...interface{}) (context.Context, error) {
+	fmt.Println("PostProcess: ", time.Now())
+	return ctx, nil
+}
+
 func main() {
-	var step1 = new(workflow.BaseStep).
+	var step0 = new(DemoStep)
+	var step1 = step0.Copy().
 		SetSimplePreProcess(func(ctx context.Context, params ...interface{}) (context.Context, error) {
 			fmt.Println("Simple PreProcess")
 			return ctx, nil
@@ -26,6 +47,7 @@ func main() {
 			return ctx, nil
 		})
 	new(workflow.Workflow).Init("demo").
+		AppendStep(step0).
 		AppendStep(step1).
 		AppendStep(step2).
 		Start(context.Background())
