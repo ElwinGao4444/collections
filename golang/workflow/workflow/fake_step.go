@@ -32,6 +32,11 @@ func (step *FakeStep) SetName(name string) StepInterface {
 	return step
 }
 
+func (step *FakeStep) SetSimpleProcess(process func(ctx context.Context, params ...interface{}) (context.Context, error)) StepInterface {
+	step.BaseStep.SetSimpleProcess(process)
+	return step
+}
+
 func (step *FakeStep) PreProcess(ctx context.Context, params ...interface{}) (context.Context, error) {
 	if v := ctx.Value("error"); v != nil {
 		if v.(string) == "PreProcess" {

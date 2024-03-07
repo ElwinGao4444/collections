@@ -51,6 +51,24 @@ func TestWorkflowBasic(t *testing.T) {
 	assert.Equal(t, wf.Status(), WORKFINISH, "workflow stat")
 }
 
+func TestWorkflowSimple(t *testing.T) {
+	var wf *Workflow = new(Workflow)
+	var step = new(FakeStep).SetSimpleProcess(
+		func(ctx context.Context, params ...interface{}) (context.Context, error) {
+			if v := ctx.Value("value"); v != nil {
+				ctx = context.WithValue(ctx, "value", v.(int)+10)
+			}
+			return ctx, nil
+		})
+	wf.Init("test").AppendStep(step)
+	assert.Equal(t, wf.status, WORKINIT, "init status")
+	assert.Equal(t, wf.currentStepIndex, -1, "init step index")
+	assert.Equal(t, wf.CurrentStep(), nil, "init current step")
+	ctx, _ := wf.Start(context.WithValue(context.Background(), "value", 1))
+	assert.Equal(t, ctx.Value("value").(int), 11, "workflow result")
+	assert.Equal(t, wf.Status(), WORKFINISH, "workflow stat")
+}
+
 func TestWorkflowDoStep(t *testing.T) {
 	var wf *Workflow = new(Workflow)
 	wf.Init("test").AppendStep(new(FakeStep)).AppendStep(new(FakeStep)).AppendStep(new(FakeStep))

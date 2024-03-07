@@ -220,23 +220,36 @@ func (wf *Workflow) doStep(step StepInterface, ctx context.Context, params ...in
 	defer func() { step.SetResult(ctx) }()
 	defer func() { step.SetError(err) }()
 
+	var preProcess func(ctx context.Context, params ...interface{}) (context.Context, error)
+	if preProcess = step.GetSimplePreProcess(); preProcess == nil {
+		preProcess = step.PreProcess
+	}
+	var process func(ctx context.Context, params ...interface{}) (context.Context, error)
+	if process = step.GetSimpleProcess(); process == nil {
+		process = step.Process
+	}
+	var postProcess func(ctx context.Context, params ...interface{}) (context.Context, error)
+	if postProcess = step.GetSimplePostProcess(); postProcess == nil {
+		postProcess = step.PostProcess
+	}
+
 	// PreProcess
 	step.SetStatus(STEPREADY)
-	if ctx, err = step.PreProcess(ctx, params...); err != nil {
+	if ctx, err = preProcess(ctx, params...); err != nil {
 		step.SetStatus(STEPERROR)
 		return ctx, err
 	}
 
 	// Process
 	step.SetStatus(STEPRUNNING)
-	if ctx, err = step.Process(ctx, params...); err != nil {
+	if ctx, err = process(ctx, params...); err != nil {
 		step.SetStatus(STEPERROR)
 		return ctx, err
 	}
 
 	// PostProcess
 	step.SetStatus(STEPDONE)
-	if ctx, err = step.PostProcess(ctx, params...); err != nil {
+	if ctx, err = postProcess(ctx, params...); err != nil {
 		step.SetStatus(STEPERROR)
 		return ctx, err
 	}

@@ -38,6 +38,10 @@ type StepInterface interface {
 	Name() string
 	SetName(name string) StepInterface
 
+	// step的执行结果
+	Result() context.Context
+	SetResult(context.Context) StepInterface
+
 	// step的执行状态
 	Status() StepStatus
 	SetStatus(StepStatus) StepInterface
@@ -46,9 +50,16 @@ type StepInterface interface {
 	Error() error
 	SetError(error) StepInterface
 
-	// step的执行结果
-	Result() context.Context
-	SetResult(context.Context) StepInterface
+	// 对PreProcess、Process和PostProcess的简易用法，同时可以对既有step功能进行最大化的复用
+	// 这种简易用法，虽然非常方便，但也存在很大的局限性，比如：无法使用step成员变量
+	GetSimplePreProcess() func(ctx context.Context, params ...interface{}) (context.Context, error)
+	SetSimplePreProcess(func(ctx context.Context, params ...interface{}) (context.Context, error)) StepInterface
+
+	GetSimpleProcess() func(ctx context.Context, params ...interface{}) (context.Context, error)
+	SetSimpleProcess(func(ctx context.Context, params ...interface{}) (context.Context, error)) StepInterface
+
+	GetSimplePostProcess() func(ctx context.Context, params ...interface{}) (context.Context, error)
+	SetSimplePostProcess(func(ctx context.Context, params ...interface{}) (context.Context, error)) StepInterface
 
 	// ===  FUNCTION  ======================================================================
 	//         Name:  PreProcess
@@ -87,11 +98,13 @@ type StepInterface interface {
 // =================================================================================
 type BaseStep struct {
 	StepInterface
-	name             string
-	status           StepStatus
-	result           context.Context
-	err              error
-	anonymousProcess func(ctx context.Context, input interface{}, shared ...interface{}) (interface{}, error)
+	name              string
+	status            StepStatus
+	result            context.Context
+	err               error
+	simplePreProcess  func(ctx context.Context, params ...interface{}) (context.Context, error)
+	simpleProcess     func(ctx context.Context, params ...interface{}) (context.Context, error)
+	simplePostProcess func(ctx context.Context, params ...interface{}) (context.Context, error)
 }
 
 func (step *BaseStep) Name() string {
@@ -127,6 +140,33 @@ func (step *BaseStep) Error() error {
 
 func (step *BaseStep) SetError(err error) StepInterface {
 	step.err = err
+	return step
+}
+
+func (step *BaseStep) GetSimplePreProcess() func(ctx context.Context, params ...interface{}) (context.Context, error) {
+	return step.simplePreProcess
+}
+
+func (step *BaseStep) SetSimplePreProcess(process func(ctx context.Context, params ...interface{}) (context.Context, error)) StepInterface {
+	step.simplePreProcess = process
+	return step
+}
+
+func (step *BaseStep) GetSimpleProcess() func(ctx context.Context, params ...interface{}) (context.Context, error) {
+	return step.simpleProcess
+}
+
+func (step *BaseStep) SetSimpleProcess(process func(ctx context.Context, params ...interface{}) (context.Context, error)) StepInterface {
+	step.simpleProcess = process
+	return step
+}
+
+func (step *BaseStep) GetSimplePostProcess() func(ctx context.Context, params ...interface{}) (context.Context, error) {
+	return step.simplePostProcess
+}
+
+func (step *BaseStep) SetSimplePostProcess(process func(ctx context.Context, params ...interface{}) (context.Context, error)) StepInterface {
+	step.simplePostProcess = process
 	return step
 }
 
