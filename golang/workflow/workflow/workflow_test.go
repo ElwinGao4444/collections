@@ -58,7 +58,7 @@ func TestWorkflowDoStep(t *testing.T) {
 	var ctx = context.WithValue(context.Background(), "value", 1)
 	for i := 0; i < 3; i++ {
 		assert.Equal(t, wf.HasNext(), true, "has next")
-		var step = wf.StepNext().(*FakeStep)
+		var step = wf.NextStep().(*FakeStep)
 		assert.NotNil(t, step, nil, "get next step")
 		var err error
 		ctx, err = wf.doStep(step, ctx)
@@ -178,7 +178,7 @@ func TestWorkflowAsyncStep(t *testing.T) {
 		AppendAsyncStep(new(FakeStep)).
 		AppendAsyncStep(new(FakeStep)).
 		AppendAsyncStep(new(FakeStep))
-	for _, step := range wf.stepAsyncList {
+	for _, step := range wf.asyncStepList {
 		assert.Equal(t, step.Result(), nil, "fake step")
 		assert.Equal(t, step.Error(), nil, "async step error")
 		assert.Equal(t, step.Status(), STEPWAIT, "async step status")
@@ -189,7 +189,7 @@ func TestWorkflowAsyncStep(t *testing.T) {
 	ctx = context.WithValue(ctx, "sleep", 20*time.Millisecond)
 	wf.Start(ctx)
 	assert.Less(t, wf.elapse, time.Duration(25)*time.Millisecond, "fake step")
-	for _, step := range wf.stepAsyncList {
+	for _, step := range wf.asyncStepList {
 		assert.Equal(t, step.Result().Value("value").(int), 2, "async step result")
 		assert.Equal(t, step.Error(), nil, "async step error")
 		assert.Equal(t, step.Status(), STEPFINISH, "async step status")

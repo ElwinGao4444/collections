@@ -95,7 +95,7 @@ func (wf *Workflow) Name() string {
 /*
 // ===  FUNCTION  ======================================================================
 //         Name:  AppendStep
-//  Description:  追加step
+//  Description:  追加同步step
 // =====================================================================================
 */
 func (wf *Workflow) AppendStep(step StepInterface) *Workflow {
@@ -159,7 +159,12 @@ func (wf *Workflow) GetAsyncStepList() []StepInterface {
 /*
 // ===  FUNCTION  ======================================================================
 //         Name:  Start
-//  Description:
+//  Description:  执行workflow，同步step和异步step会同时执行，在所有step执行完毕后返回
+//                参数列表
+//                ctx: workflow上下文，用于在step之内的3个阶段，与step之间传递数据，并
+//                     将最后一个step，最后一个阶段返回的ctx作为整个workflow的返回信息
+//                params: 自定义全局共享参数，该参数会在所有step的所有阶段共享，需要用
+//                        户根据实际情况，对数据内容进行并发访问的保护
 // =====================================================================================
 */
 func (wf *Workflow) Start(ctx context.Context, params ...interface{}) (context.Context, error) {
@@ -180,7 +185,7 @@ func (wf *Workflow) Start(ctx context.Context, params ...interface{}) (context.C
 	// 处理同步step
 	var err error
 	for wf.HasNext() {
-		if ctx, err = wf.doStep(wf.StepNext(), ctx, params...); err != nil {
+		if ctx, err = wf.doStep(wf.NextStep(), ctx, params...); err != nil {
 			wf.status = WORKERROR
 			return ctx, err
 		}
@@ -243,7 +248,7 @@ func (wf *Workflow) doStep(step StepInterface, ctx context.Context, params ...in
 /*
 // ===  FUNCTION  ======================================================================
 //         Name:  HasNext
-//  Description:
+//  Description:  判断workflow的pipeline是否完成
 // =====================================================================================
 */
 func (wf *Workflow) HasNext() bool {
@@ -255,19 +260,8 @@ func (wf *Workflow) HasNext() bool {
 
 /*
 // ===  FUNCTION  ======================================================================
-//         Name:  StepNext
-//  Description:
-// =====================================================================================
-*/
-func (wf *Workflow) StepNext() StepInterface {
-	wf.currentStepIndex++
-	return wf.CurrentStep()
-}
-
-/*
-// ===  FUNCTION  ======================================================================
 //         Name:  CurrentStep
-//  Description:
+//  Description:  获取当前step
 // =====================================================================================
 */
 func (wf *Workflow) CurrentStep() StepInterface {
@@ -279,8 +273,19 @@ func (wf *Workflow) CurrentStep() StepInterface {
 
 /*
 // ===  FUNCTION  ======================================================================
+//         Name:  NextStep
+//  Description:  获取下一个step
+// =====================================================================================
+*/
+func (wf *Workflow) NextStep() StepInterface {
+	wf.currentStepIndex++
+	return wf.CurrentStep()
+}
+
+/*
+// ===  FUNCTION  ======================================================================
 //         Name:  Status
-//  Description:
+//  Description:  获取workflow的当前状态
 // =====================================================================================
 */
 func (wf *Workflow) Status() WorkStatus {
@@ -290,7 +295,7 @@ func (wf *Workflow) Status() WorkStatus {
 /*
 // ===  FUNCTION  ======================================================================
 //         Name:  Elapse
-//  Description:  获取上一个workflow的执行时间
+//  Description:  获取workflow的总体执行时间
 // =====================================================================================
 */
 //
