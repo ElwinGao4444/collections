@@ -37,20 +37,13 @@ const WORKERROR WorkStatus = 4   // 工作流执行失败
 const WORKCANCEL WorkStatus = 5  // 工作流执行中止
 
 type Workflow struct {
-	// workflow名字
-	name string
-	// 当前任务下标
-	currentStepIndex int
-	// workflow的step列表
-	stepList []StepInterface
-	// workflow的异步step列表
-	stepAsyncList []StepInterface
-	// workflow自身状态信息
-	status WorkStatus
-	// workflow整体耗时
-	elapse time.Duration
-	// 用户处理并发step的同步机制
-	waitGroup *sync.WaitGroup
+	name             string          // workflow名字
+	currentStepIndex int             // 当前任务下标
+	status           WorkStatus      // workflow状态信息
+	elapse           time.Duration   // workflow整体耗时
+	syncStepList     []StepInterface // workflow的同步step列表
+	asyncStepList    []StepInterface // workflow的异步step列表
+	waitGroup        *sync.WaitGroup // 等待异步step的同步机制
 }
 
 /*
@@ -61,8 +54,8 @@ type Workflow struct {
 */
 func (wf *Workflow) Init(name string) *Workflow {
 	wf.name = name
-	wf.stepList = make([]StepInterface, 0)
-	wf.stepAsyncList = make([]StepInterface, 0)
+	wf.syncStepList = make([]StepInterface, 0)
+	wf.asyncStepList = make([]StepInterface, 0)
 	wf.waitGroup = new(sync.WaitGroup)
 	wf.Reset()
 	wf.status = WORKINIT
@@ -78,10 +71,10 @@ func (wf *Workflow) Init(name string) *Workflow {
 */
 func (wf *Workflow) Reset() *Workflow {
 	wf.currentStepIndex = -1
-	for _, step := range wf.stepList {
+	for _, step := range wf.syncStepList {
 		step.SetStatus(STEPWAIT)
 	}
-	for _, step := range wf.stepAsyncList {
+	for _, step := range wf.asyncStepList {
 		step.SetStatus(STEPWAIT)
 	}
 	wf.status = WORKREADY
@@ -106,7 +99,7 @@ func (wf *Workflow) Name() string {
 // =====================================================================================
 */
 func (wf *Workflow) AppendStep(step StepInterface) *Workflow {
-	wf.stepList = append(wf.stepList, step)
+	wf.syncStepList = append(wf.syncStepList, step)
 	return wf
 }
 
@@ -117,7 +110,7 @@ func (wf *Workflow) AppendStep(step StepInterface) *Workflow {
 // =====================================================================================
 */
 func (wf *Workflow) AppendAsyncStep(step StepInterface) *Workflow {
-	wf.stepAsyncList = append(wf.stepAsyncList, step)
+	wf.asyncStepList = append(wf.asyncStepList, step)
 	return wf
 }
 
@@ -127,8 +120,8 @@ func (wf *Workflow) AppendAsyncStep(step StepInterface) *Workflow {
 //  Description:  设置同步step list，这个操作会覆盖workflow中已经注册的step
 // =====================================================================================
 */
-func (wf *Workflow) SetStepList(stepList []StepInterface) *Workflow {
-	wf.stepList = stepList
+func (wf *Workflow) SetStepList(syncStepList []StepInterface) *Workflow {
+	wf.syncStepList = syncStepList
 	return wf
 }
 
@@ -139,7 +132,7 @@ func (wf *Workflow) SetStepList(stepList []StepInterface) *Workflow {
 // =====================================================================================
 */
 func (wf *Workflow) GetStepList() []StepInterface {
-	return wf.stepList
+	return wf.syncStepList
 }
 
 /*
@@ -148,8 +141,8 @@ func (wf *Workflow) GetStepList() []StepInterface {
 //  Description:  设置异步step list，这个操作会覆盖workflow中已经注册的step
 // =====================================================================================
 */
-func (wf *Workflow) SetAyncStepList(stepAsyncList []StepInterface) *Workflow {
-	wf.stepAsyncList = stepAsyncList
+func (wf *Workflow) SetAyncStepList(asyncStepList []StepInterface) *Workflow {
+	wf.asyncStepList = asyncStepList
 	return wf
 }
 
@@ -160,7 +153,7 @@ func (wf *Workflow) SetAyncStepList(stepAsyncList []StepInterface) *Workflow {
 // =====================================================================================
 */
 func (wf *Workflow) GetAsyncStepList() []StepInterface {
-	return wf.stepAsyncList
+	return wf.asyncStepList
 }
 
 /*
@@ -176,7 +169,7 @@ func (wf *Workflow) Start(ctx context.Context, params ...interface{}) (context.C
 	var workflowTimeBegin = time.Now()
 
 	// 处理异步step
-	for _, step := range wf.stepAsyncList {
+	for _, step := range wf.asyncStepList {
 		wf.waitGroup.Add(1)
 		go func(step StepInterface) {
 			defer wf.waitGroup.Done()
@@ -257,7 +250,7 @@ func (wf *Workflow) HasNext() bool {
 	if wf.status == WORKFINISH || wf.status == WORKERROR {
 		return false
 	}
-	return wf.currentStepIndex < len(wf.stepList)-1
+	return wf.currentStepIndex < len(wf.syncStepList)-1
 }
 
 /*
@@ -278,10 +271,10 @@ func (wf *Workflow) StepNext() StepInterface {
 // =====================================================================================
 */
 func (wf *Workflow) CurrentStep() StepInterface {
-	if wf.currentStepIndex < 0 || wf.currentStepIndex >= len(wf.stepList) {
+	if wf.currentStepIndex < 0 || wf.currentStepIndex >= len(wf.syncStepList) {
 		return nil
 	}
-	return wf.stepList[wf.currentStepIndex]
+	return wf.syncStepList[wf.currentStepIndex]
 }
 
 /*
