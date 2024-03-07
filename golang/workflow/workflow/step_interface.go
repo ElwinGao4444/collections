@@ -63,7 +63,7 @@ type StepInterface interface {
 	//                参数：input - 输入参数
 	//                      params - 自定义参数
 	//                返回值: interface{}: 非空则跳过当前step，并以该interface{}作为下一个step的input
-	//                        error: 如果error不为nil，则终止整个workflow 
+	//                        error: 如果error不为nil，则终止整个workflow
 	// =====================================================================================
 	Before(input interface{}, params ...interface{}) (interface{}, error)
 

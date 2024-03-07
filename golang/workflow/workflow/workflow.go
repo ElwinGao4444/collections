@@ -212,12 +212,11 @@ func (wf *Workflow) doStep(step StepInterface, input interface{}, params ...inte
 		return nil, errors.New("currentStepIndex is outof range")
 	}
 
-
 	// 创建step单次执行逻辑闭包
 	var err error
 	var result interface{} = nil
-	defer func() {step.SetError(err)}()
-	defer func() {step.SetResult(result)}()
+	defer func() { step.SetError(err) }()
+	defer func() { step.SetResult(result) }()
 	stepClosure := func() error {
 		// do before
 		step.SetStatus(STEPREADY)
@@ -251,7 +250,7 @@ func (wf *Workflow) doStep(step StepInterface, input interface{}, params ...inte
 
 	// 基于重试策略执行step
 	timeBegin := time.Now()
-	defer func() {step.SetElapse(time.Since(timeBegin))}()
+	defer func() { step.SetElapse(time.Since(timeBegin)) }()
 	if err := wf.retryPolicy(stepClosure); err != nil {
 		step.SetStatus(STEPERRFINISH)
 		return result, err

@@ -16,9 +16,9 @@ package workflow
 
 import (
 	"errors"
+	"strconv"
 	"testing"
 	"time"
-	"strconv"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -31,7 +31,7 @@ func TestWorkflowBasic(t *testing.T) {
 	assert.Equal(t, len(stepList), 2, "stepList len")
 	stepList = append(stepList, new(FakeStep))
 	wf.SetStepList(stepList)
-	for i, step := range(wf.GetStepList()) {
+	for i, step := range wf.GetStepList() {
 		step.Init(strconv.Itoa(i))
 	}
 	assert.Equal(t, len(wf.GetStepList()), 3, "get stepList")
