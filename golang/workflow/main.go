@@ -27,6 +27,7 @@ func (step *DemoStep) PostProcess(ctx context.Context, params ...interface{}) (c
 }
 
 func main() {
+	// 同步workflow
 	var step0 = new(DemoStep)
 	var step1 = step0.Copy().
 		SetSimplePreProcess(func(ctx context.Context, params ...interface{}) (context.Context, error) {
@@ -46,10 +47,23 @@ func main() {
 			fmt.Println("Simple Process 2")
 			return ctx, nil
 		})
-	new(workflow.Workflow).Init("demo").
+	new(workflow.Workflow).Init("sync").
 		AppendStep(step0).
 		AppendStep(step1).
 		AppendStep(step2).
 		Start(context.Background())
-	fmt.Println("vim-go")
+
+	// 异步workflow
+	var ctx = context.Background()
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, 100*time.Millisecond)
+	defer cancel()
+	var step3 = step0.Copy().
+		SetSimpleProcess(func(ctx context.Context, params ...interface{}) (context.Context, error) {
+			time.Sleep(time.Duration(10) * time.Second)
+			return ctx, nil
+		})
+	new(workflow.Workflow).Init("async").
+		AppendAsyncStep(step3).
+		Start(ctx)
 }
