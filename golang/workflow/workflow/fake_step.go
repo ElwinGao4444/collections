@@ -15,6 +15,7 @@
 package workflow
 
 import (
+	"context"
 	"time"
 )
 
@@ -26,16 +27,21 @@ type FakeStep struct {
 	Data        int
 }
 
-func (step *FakeStep) PreProcess(input interface{}, params ...interface{}) (interface{}, error) {
-	if len(params) > 0 {
-		switch v := params[0].(type) {
+func (step *FakeStep) SetName(name string) StepInterface {
+	step.BaseStep.SetName(name)
+	return step
+}
+
+func (step *FakeStep) PreProcess(ctx context.Context, input interface{}, shared ...interface{}) (interface{}, error) {
+	if len(shared) > 0 {
+		switch v := shared[0].(type) {
 		case error:
 			if v.Error() == "before" {
 				return 0, v
 			}
 		case bool:
 			if v == true {
-				params[0] = false
+				shared[0] = false
 				return 2, nil
 			}
 		}
@@ -44,14 +50,14 @@ func (step *FakeStep) PreProcess(input interface{}, params ...interface{}) (inte
 	return nil, nil
 }
 
-func (step *FakeStep) Process(input interface{}, params ...interface{}) (interface{}, error) {
+func (step *FakeStep) Process(ctx context.Context, input interface{}, shared ...interface{}) (interface{}, error) {
 	switch v := input.(type) {
 	case int:
 		step.Data = v + 1
 	}
 
-	if len(params) > 0 {
-		switch v := params[0].(type) {
+	if len(shared) > 0 {
+		switch v := shared[0].(type) {
 		case error:
 			if v.Error() == "step" {
 				return 0, v
@@ -65,9 +71,9 @@ func (step *FakeStep) Process(input interface{}, params ...interface{}) (interfa
 	return step.Data, nil
 }
 
-func (step *FakeStep) PostProcess(input interface{}, result interface{}, params ...interface{}) error {
-	if len(params) > 0 {
-		switch v := params[0].(type) {
+func (step *FakeStep) PostProcess(ctx context.Context, input interface{}, result interface{}, shared ...interface{}) error {
+	if len(shared) > 0 {
+		switch v := shared[0].(type) {
 		case error:
 			if v.Error() == "after" {
 				return v

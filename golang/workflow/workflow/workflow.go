@@ -15,6 +15,7 @@
 package workflow
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"time"
@@ -163,7 +164,7 @@ func (wf *Workflow) GetStepList() []StepInterface {
 //  Description:
 // =====================================================================================
 */
-func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}, error) {
+func (wf *Workflow) Start(ctx context.Context, input interface{}, shared ...interface{}) (interface{}, error) {
 	wf.Reset()
 	wf.status = WORKRUNNING
 
@@ -174,7 +175,7 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 		wf.waitGroup.Add(1)
 		go func(step StepInterface) {
 			defer wf.waitGroup.Done()
-			wf.doStep(step, input, params...)
+			wf.doStep(step, ctx, input, shared...)
 		}(step)
 	}
 
@@ -182,7 +183,7 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 	var result interface{}
 	var err error
 	for wf.HasNext() {
-		if result, err = wf.doStep(wf.StepNext(), input, params...); err != nil {
+		if result, err = wf.doStep(wf.StepNext(), ctx, input, shared...); err != nil {
 			wf.status = WORKERRFINISH
 			return result, err
 		}
@@ -206,7 +207,7 @@ func (wf *Workflow) Start(input interface{}, params ...interface{}) (interface{}
 //  Description:  执行指定step
 // =====================================================================================
 */
-func (wf *Workflow) doStep(step StepInterface, input interface{}, params ...interface{}) (interface{}, error) {
+func (wf *Workflow) doStep(step StepInterface, ctx context.Context, input interface{}, shared ...interface{}) (interface{}, error) {
 	if step == nil {
 		glog.Errorf("currentStepIndex[%d] is outof range[%d]", wf.currentStepIndex, len(wf.stepList))
 		return nil, errors.New("currentStepIndex is outof range")
@@ -220,7 +221,7 @@ func (wf *Workflow) doStep(step StepInterface, input interface{}, params ...inte
 	stepClosure := func() error {
 		// do before
 		step.SetStatus(STEPREADY)
-		result, err = step.PreProcess(input, params...)
+		result, err = step.PreProcess(ctx, input, shared...)
 		if err != nil {
 			step.SetStatus(STEPERROR)
 			return err
@@ -232,14 +233,14 @@ func (wf *Workflow) doStep(step StepInterface, input interface{}, params ...inte
 
 		// do step
 		step.SetStatus(STEPRUNNING)
-		if result, err = step.Process(input, params...); err != nil {
+		if result, err = step.Process(ctx, input, shared...); err != nil {
 			step.SetStatus(STEPERROR)
 			return err
 		}
 
 		// do after
 		step.SetStatus(STEPDONE)
-		if err = step.PostProcess(input, result, params...); err != nil {
+		if err = step.PostProcess(ctx, input, result, shared...); err != nil {
 			step.SetStatus(STEPERROR)
 			return err
 		}
