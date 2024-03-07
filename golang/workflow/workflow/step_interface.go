@@ -35,11 +35,9 @@ const STEPUNKNOWN StepStatus = 8   // 未知状态
 // =====================================================================================
 */
 type StepInterface interface {
-	// step初始化
-	Init(name string)
-
 	// step的名字
 	Name() string
+	SetName(name string)
 
 	// step执行后的错误信息
 	Error() error
@@ -97,12 +95,12 @@ type BaseStep struct {
 	elapse time.Duration
 }
 
-func (step *BaseStep) Init(name string) {
-	step.name = name
-}
-
 func (step *BaseStep) Name() string {
 	return step.name
+}
+
+func (step *BaseStep) SetName(name string) {
+	step.name = name
 }
 
 func (step *BaseStep) Error() error {

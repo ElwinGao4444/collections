@@ -32,7 +32,7 @@ func TestWorkflowBasic(t *testing.T) {
 	stepList = append(stepList, new(FakeStep))
 	wf.SetStepList(stepList)
 	for i, step := range wf.GetStepList() {
-		step.Init(strconv.Itoa(i))
+		step.SetName(strconv.Itoa(i))
 	}
 	assert.Equal(t, len(wf.GetStepList()), 3, "get stepList")
 	assert.Equal(t, wf.status, WORKINIT, "init status")
