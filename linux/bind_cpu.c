@@ -63,6 +63,7 @@ int main(int argc, char *argv[])
 				perror("sched_setaffinity");
 			}
 			printf("using core: %d\r", i);
+			fflush(stdout);
 			dummy_run();
 		}
 	}
