@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 			if (sched_setaffinity(0, sizeof(mask), &mask) < 0) {
 				perror("sched_setaffinity");
 			}
-			printf("using core: %d\n", i);
+			printf("using core: %d\r", i);
 			dummy_run();
 		}
 	}
