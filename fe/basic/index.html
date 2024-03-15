@@ -4,18 +4,18 @@
 	<head>
 		<meta charset="utf-8">
 		<title>title会在Tab栏显示</title>
-		<!--外部引用CSS-->
+		<!-- 外部样式表 -->
 		<link rel="stylesheet" type="text/css" href="style.css">
-		<!-- 内连CSS -->
+		<!-- 内部样式表 -->
 		<style type="text/css">
 		p {
 			color:blue
 		}
 		</style>
 
-		<!--外部引用JS-->
+		<!-- 外部脚本 -->
 		<script src="script.js"></script>
-		<!-- 内连JS -->
+		<!-- 内部脚本 -->
 		<script type="text/javascript">
 		console.log("inner log")
 		</script>
@@ -36,5 +36,16 @@
 		<a href="https://www.runoob.com/tags/ref-standardattributes.html", target="_blank">HTML属性列表</a>
 		<a href="https://www.runoob.com/html/html-formatting.html", target="_blank">HTML文本格式化</a>
 		<a href="https://www.runoob.com/html/html-quicklist.html", target="_blank">HTML速查手册</a>
+
+		<hr>
+
+		<p style="color:green;text-align:center">内联样式表渲染文字为绿色并居中</p>
+		<p class="center italic">通过class选择器渲染文字居中斜体</p>
+		<p id="red">通过id选择器渲染文字为红色粗体</p>
+
+		<hr>
+
+		<p class="box_model">content</p>
+		<p class="box_model">content</p>
 	</body>
 </html>
