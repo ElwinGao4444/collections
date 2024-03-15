@@ -3,7 +3,7 @@
  *
  *       Filename:  bind_cpu.c
  *
- *    Description:  
+ *    Description:  编译运行之后，输入命令top -p 进程id，输入f，输入j，输入回车，输入H，可以看到主线程一直在各个核心之间不停切换
  *
  *        Version:  1.0
  *        Created:  08/18/2016 04:36:37 PM
