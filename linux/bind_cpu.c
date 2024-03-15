@@ -4,7 +4,7 @@
  *       Filename:  bind_cpu.c
  *
  *    Description:  编译运行之后，输入命令top -p 进程id
- *                  输入f，输入j，输入回车，输入H
+ *                  输入f，输入激活选项“P = Last Used Cpu”
  *                  可以看到主线程一直在各个核心之间不停切换
  *
  *        Version:  1.0
