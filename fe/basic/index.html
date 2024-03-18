@@ -47,5 +47,13 @@
 
 		<p class="box_model"><span>content</span></p>
 		<p class="box_model"><span>content</span></p>
+
+		<div style="border:solid; height: 1000px">
+			<div style="border:solid; position: static">static</div>	<!-- 正常位置（默认值） -->
+			<div style="border:solid; position: fixed; top: 100px; left: 100px">fixed</div>	<!-- 相对浏览器的位置的定位 -->
+			<div style="border:solid; position: relative; top: 100px; left: 100px">relative</div>	<!-- 相对static位置的定位 -->
+			<div style="border:solid; position: absolute; top: 100px; left: 100px">absolute</div>	<!-- 相对非static的父节点的位置的定位 -->
+			<div style="border:solid; position: sticky; top: 100px; left: 100px">sticky</div>	<!-- 正常位置（默认值） -->
+		</div>
 	</body>
 </html>
