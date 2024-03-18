@@ -12,10 +12,11 @@ p.italic{ font-style: italic; }
 /* 将盒子模型着色显示 */
 .box_model {
 	width: 100px;	/* box的宽度 */
-	margin: 10px;	/* margin无法显示 */
-	border: 5px solid green;
-	padding: 0px;	/* padding无法显示 */
+	margin: 10px;	/* border的外边界到outline的外边界 */
+	border: 5px solid blue;	/* border的宽度会改变box的大小，延伸知识：box-sizing属性 */
+	padding: 0px;	/* content的外边界到border的内边界 */
+	/* outline 并不会导致box变大 */
 	outline-style: solid;
-	outline-color: red;
+	outline-color: gray;
 	outline-width: 10px;
 }
