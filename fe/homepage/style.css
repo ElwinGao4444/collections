@@ -1,0 +1,60 @@
+/* 头部标题 */
+.header h1 {
+	text-align: center;	/* 文字居中 */
+}
+
+/* 导航栏 */
+.navigation {
+	overflow: hidden;	/* 无滚动条，内容裁剪 */
+	background-color: #333;	/* 背景颜色 */
+}
+
+/* 导航栏链接 */
+.navigation a {
+	float: left;	/* 设置浮动 */
+	display: block;	/* 设置框类型 */
+	color: #f2f2f2;	/* 文字颜色 */
+	text-align: center;	/* 对齐方式 */
+	padding: 14px 16px;	/* 填充宽度 */
+	text-decoration: none;	/* 文本装饰 */
+}
+
+/* 导航栏链接链接 - 修改颜色 */
+.navigation a:hover {
+	background-color: #ddd;
+	color: black;
+}
+
+/* content后清除浮动 */
+.content {
+	border:solid;
+}
+.content:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* 内容分列 */
+.column {
+	float: left;
+}
+.column.left {
+	width: 10%;
+	text-align: center;
+	background-color: lightgray;
+}
+.column.center {
+	width: 80%;
+	text-align: center;
+}
+.column.right {
+	width: 10%;
+	text-align: center;
+	background-color: lightgray;
+}
+
+/* 页脚 */
+.footer {
+	text-align: center;	/* 文字居中 */
+}
