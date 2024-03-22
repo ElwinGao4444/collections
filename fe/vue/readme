@@ -3,4 +3,9 @@ vue官方文档：https://cn.vuejs.org/guide/introduction.html
 # 基本用法：
 
 ## 创建/启动一个应用
-vue create myapp
+npm create vue@latest
+
+## 启动应用测试
+cd <your-project-name>
+npm install
+npm run dev
