@@ -17,9 +17,6 @@ function doSomthing() {
 }
 </script>
 
-<script default>
-</script>
-
 <template>
   <!-- 变量的基本用法 -->
   <h1>{{ msg }}</h1>                        <!-- 变量作为内容的使用：双打括号 -->
