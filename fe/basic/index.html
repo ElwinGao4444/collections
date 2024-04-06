@@ -1,84 +1,88 @@
 <!DOCTYPE html>
 <html>
-	<!-- head部分 -->
-	<head>
-		<meta charset="utf-8">
-		<title>title会在Tab栏显示</title>
-		<!-- 外部样式表 -->
-		<link rel="stylesheet" type="text/css" href="style.css">
-		<!-- 内部样式表 -->
-		<style type="text/css">
+<!-- head部分 -->
+
+<head>
+	<meta charset="utf-8">
+	<title>title会在Tab栏显示</title>
+	<!-- 外部样式表 -->
+	<link rel="stylesheet" type="text/css" href="style.css">
+	<!-- 内部样式表 -->
+	<style type="text/css">
 		h1 {
-			color:blue
+			color: blue
 		}
-		</style>
+	</style>
 
-		<!-- 外部脚本 -->
-		<script src="script.js"></script>
-		<!-- 内部脚本 -->
-		<script type="text/javascript">
+	<!-- 外部脚本 -->
+	<script src="script.js"></script>
+	<!-- 内部脚本 -->
+	<script type="text/javascript">
 		console.log("inner log")
-		</script>
-	</head>
-	<!-- body部分 -->
-	<body>
-		<!-- HTML基本标签 -->
-		<h1>标题：h1</h1>
-		<h2>标题：h2</h2>
-		<h3>标题：h3</h3>
-		<h4>标题：h4</h4>
-		<h5>标题：h5</h5>
-		<h6>标题：h6</h6>
-		<p>段落</p>
-		<a href="about:blank">链接</a>
-		<img src="./flag.png" alt="国旗" width="30" height="20" />
-		<p>第一行<br>第二行<br/>第三行</p>
-		<P>html标签对于大小写不敏感，但推荐小写</P>
-		<a href="https://www.runoob.com/tags/ref-standardattributes.html", target="_blank">HTML属性列表</a>
-		<a href="https://www.runoob.com/html/html-formatting.html", target="_blank">HTML文本格式化</a>
-		<a href="https://www.runoob.com/html/html-quicklist.html", target="_blank">HTML速查手册</a>
+	</script>
+</head>
+<!-- body部分 -->
 
-		<hr>
+<body>
+	<!-- HTML基本标签 -->
+	<h1>标题：h1</h1>
+	<h2>标题：h2</h2>
+	<h3>标题：h3</h3>
+	<h4>标题：h4</h4>
+	<h5>标题：h5</h5>
+	<h6>标题：h6</h6>
+	<p>段落</p>
+	<a href="about:blank">链接</a>
+	<img src="./flag.png" alt="国旗" width="30" height="20" />
+	<p>第一行<br>第二行<br />第三行</p>
+	<P>html标签对于大小写不敏感，但推荐小写</P>
+	<a href="https://www.runoob.com/tags/ref-standardattributes.html" , target="_blank">HTML属性列表</a>
+	<a href="https://www.runoob.com/html/html-formatting.html" , target="_blank">HTML文本格式化</a>
+	<a href="https://www.runoob.com/html/html-quicklist.html" , target="_blank">HTML速查手册</a>
 
-		<p style="color:green;text-align:center">内联样式表渲染文字为绿色并居中</p>
-		<p class="center italic">通过class选择器渲染文字居中斜体</p>
-		<p id="red">通过id选择器渲染文字为红色粗体</p>
+	<hr>
 
-		<hr>
+	<p style="color:green;text-align:center">内联样式表渲染文字为绿色并居中</p>
+	<p class="center italic">通过class选择器渲染文字居中斜体</p>
+	<p id="red">通过id选择器渲染文字为红色粗体</p>
 
-		<!-- 盒子模型 -->
-		<p class="box_model"><span>content</span></p>
-		<p class="box_model"><span>content</span></p>
+	<hr>
 
-		<!-- 滚动 -->
-		<div style="border:solid; margin:10px; overflow: auto; height: 90px">
-			<p style="border:solid">overflow</p>
-			<span style="position: relative; top: 0px">content</span>
-			<span style="position: relative; top: 20px">content</span>
-			<span style="position: relative; top: 40px">content</span>
-			<span style="position: relative; top: 60px">content</span>
-			<span style="position: relative; top: 80px">content</span>
-			<span style="position: relative; top: 100px">content</span>
-			<span style="position: relative; top: 120px">content</span>
-		</div>
+	<!-- 盒子模型 -->
+	<p class="box_model"><span>content</span></p>
+	<p class="box_model"><span>content</span></p>
 
-		<!-- 浮动 -->
-		<div style="border:solid; margin:10px">
-			<p style="border:solid">float</p>
-			<div style="border:solid; float:left">content</div>
-			<div style="border:solid; float:left">content</div>
-			<div style="border:solid; float:left">content</div>
-			<p style="clear:both">clear float</p>	<!-- 清除浮动，确保当前标签不与float标签在同一行 -->
-		</div>
+	<!-- 滚动 -->
+	<div style="border:solid; margin:10px; overflow: auto; height: 90px">
+		<p style="border:solid">overflow</p>
+		<span style="position: relative; top: 0px">content</span>
+		<span style="position: relative; top: 20px">content</span>
+		<span style="position: relative; top: 40px">content</span>
+		<span style="position: relative; top: 60px">content</span>
+		<span style="position: relative; top: 80px">content</span>
+		<span style="position: relative; top: 100px">content</span>
+		<span style="position: relative; top: 120px">content</span>
+	</div>
 
-		<!-- 定位 -->
-		<div style="border:solid; margin:10px; position: relative; height: 800px">
-			<p style="border:solid">position</p>
-			<div style="border:solid; position: static">static</div>	<!-- 正常位置（默认值） -->
-			<div style="border:solid; position: fixed; top: 100px; left: 100px">fixed</div>	<!-- 相对浏览器的位置的定位 -->
-			<div style="border:solid; position: relative; top: 100px; left: 100px">relative</div>	<!-- 相对static位置的定位 -->
-			<div style="border:solid; position: absolute; top: 100px; left: 100px">absolute</div>	<!-- 相对非static的父节点的位置的定位 -->
-			<div style="border:solid; position: sticky; top: 100px; left: 100px">sticky</div>	<!-- 正常位置（默认值） -->
-		</div>
-	</body>
+	<!-- 浮动 -->
+	<div style="border:solid; margin:10px">
+		<p style="border:solid">float</p>
+		<div style="float:left">content</div>
+		<div style="float:left">content</div>
+		<div style="float:left">content</div>
+		<p style="clear:both">clear float</p> <!-- 清除浮动，确保当前标签不与float标签在同一行 -->
+	</div>
+
+	<!-- 定位 -->
+	<div style="border:solid; margin:10px; position: relative; height: 800px">
+		<p style="border:solid">position</p>
+		<div style="position: static">static</div> <!-- 正常位置（默认值） -->
+		<div style="position: fixed; top: 100px; left: 100px">fixed</div> <!-- 相对浏览器的位置的定位 -->
+		<div style="position: relative; top: 100px; left: 100px">relative</div> <!-- 相对static位置的定位 -->
+		<div style="position: absolute; top: 100px; left: 100px">absolute</div>
+		<!-- 相对非static的父节点的位置的定位 -->
+		<div style="position: sticky; top: 100px; left: 100px">sticky</div> <!-- 正常位置（默认值） -->
+	</div>
+</body>
+
 </html>

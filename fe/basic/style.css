@@ -2,11 +2,21 @@ body { background-color: lightgray; }
 
 /* “.”开头表示所有class为center的标签均被该选择器选中 */
 .center { text-align: center; }
-/* 只有标签为p，且class为center的标签被该选择器选中 */
+/* 只有标签为p，且class为italic的标签被该选择器选中 */
 p.italic{ font-style: italic; }
 
 /* id为red的标签被该选择器选中 */
 #red { color: red; font-weight: bold;
+}
+
+/* 多级选择器 */
+div div {
+	border:solid
+}
+
+/* 属性选择器 */
+[href="about:blank"] {
+	color: green;
 }
 
 /* 将盒子模型着色显示 */
