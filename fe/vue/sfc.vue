@@ -1,5 +1,6 @@
 <script setup>
-import { ref, reactive, computed, watch } from 'vue'
+// 定义基本变量
+import { ref, reactive, computed, watch, watchEffect } from 'vue'
 const msg = 'Hello World!'              // 普通变量声明
 const ref_msg = ref('Hello World Ref!')  // 响应式变量声明
 const ref_obj = ref({name:"ref_obj_name", tag:"ref_obj_tag"})
@@ -11,6 +12,14 @@ const inner_html = "<p>Inner Html</p>"
 const attrName = "value"
 const action = "click"
 
+// 定义ref属性处理逻辑
+let ref_tag=ref()
+let ref_tag_content = ref('')
+function getDomRef() {
+  ref_tag_content.value = ref_tag.value.innerHTML
+}
+
+// 定义ref用法的相关函数
 const objectOfAttrs = {
   id: 'container',
   class: 'wrapper'
@@ -24,6 +33,7 @@ function ref_obj_reset() {
   ref_obj.value = {name:"ref_obj_name", tag:"ref_obj_tag"}
 }
 
+// 定义computed相关处理函数
 let refmsg_upper_ro = computed(() => {
   return ref_msg.value.toUpperCase()
 })
@@ -64,6 +74,11 @@ watch(() => ref_obj.value.name, (val) => { // 只watch一个对象中的具体�
 watch ([ref_msg, ref_obj, () => ref_obj.value.name], (val) => {
   console.log(val)
 })
+
+// 使用WatchEffect实现自动全域监听
+watchEffect(()=>{
+  console.log("watchEffect:" + watch_result.value)
+})
 </script>
 
 <template>
@@ -82,6 +97,13 @@ watch ([ref_msg, ref_obj, () => ref_obj.value.name], (val) => {
   <span>单向绑定：</span> <input :value="ref_msg" /> <br/>  <!-- 响应式变量 -->
   <span>对象绑定：</span> <input :value="reactive_obj" /> <br/>  <!-- 响应式变量（reactive） -->
   <span>双向绑定：</span> <input v-model="ref_msg" />       <!-- v-model默认绑定value属性 -->
+
+  <!-- 标签的ref属性 -->
+  <!-- 注意：ref属性只能加在HTML标签上，拿到的是DOM元素，放在组件标签上，拿到的是组件对象 -->
+  <!-- 在组件标签上用ref属性，就需要在子组件中通过defineExpose来暴露内部变量，父组件才能访问子组件的私有变量 -->
+  <h3 ref="ref_tag">通过ref标签获取DOM树的元素</h3> <!-- 通过ref属性，相比id、class，可以有效的避免重名带来覆盖问题，保持标签的局部性 -->
+  <input :value="ref_tag_content" />
+  <button @click="getDomRef">点击获取ref标签指定的dom树属性</button>
 
   <!-- computed计算属性用法 -->
   <h3> computed计算属性用法 </h3>
