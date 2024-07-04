@@ -103,9 +103,10 @@ func TestGoMock(t *testing.T) {
 // 执行方法：GOARCH=amd64 go test -gcflags=-l -v -run TestGoMonkey
 func TestGoMonkey(t *testing.T) {
 	// 对指定函数进行Mock
-	monkey.Patch(bar, func(n int) int {
+	var patch = monkey.Patch(bar, func(n int) int {
 		return n + 2
 	})
+	defer patch.Unpatch()
 
 	if n := foo(1); n != 3 {
 		t.Errorf("result = %v", n)
@@ -113,10 +114,13 @@ func TestGoMonkey(t *testing.T) {
 
 	// 对成员方法进行Mock
 	var testUser = &User{}
-	monkey.PatchInstanceMethod(reflect.TypeOf(testUser), "Handle", func(_ *User, n int) int {
+	var patchInstance = monkey.PatchInstanceMethod(reflect.TypeOf(testUser), "Handle", func(_ *User, n int) int {
 		return n + 1
 	})
 	if n := testUser.Handle(0); n != 1 {
 		t.Errorf("result = %v", n)
 	}
+	defer patchInstance.Unpatch()
+
+	monkey.UnpatchAll()
 }
