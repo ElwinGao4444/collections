@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"bou.ke/monkey"
-	gomock "github.com/golang/mock/gomock"
+	"github.com/agiledragon/gomonkey/v2"
+	"github.com/bytedance/mockey"
+	"github.com/golang/mock/gomock"
 )
 
 // ****************************************************************
@@ -92,16 +94,16 @@ func TestGoMock(t *testing.T) {
 }
 
 // ****************************************************************
-// 第三方GoMonkey用法
+// 第三方Monkey用法(对非x86体系支持不好)
 // ****************************************************************
 //
-// GoMonkey安装
+// Monkey安装
 // go get bou.ke/monkey
 //
 // 在MaxOS m1芯片上，需要增加环境变量：GOARCH=amd64
 // 一般需要在编译参数上，增加"-gcflags=-l或-gcflags=all=-l"，禁止内联优化
-// 执行方法：GOARCH=amd64 go test -gcflags=all=-l -v -run TestGoMonkey
-func TestGoMonkey(t *testing.T) {
+// 执行方法：GOARCH=amd64 go test -gcflags=all=-l -v -run TestMonkey
+func TestMonkey(t *testing.T) {
 	// 对指定函数进行Mock
 	var patch = monkey.Patch(bar, func(n int) int {
 		return n + 2
@@ -123,4 +125,88 @@ func TestGoMonkey(t *testing.T) {
 	defer patchInstance.Unpatch()
 
 	monkey.UnpatchAll()
+}
+
+// ****************************************************************
+// 第三方GoMonkey用法(对非x86体系支持不好)
+// ****************************************************************
+//
+// GoMonkey安装
+// go get github.com/agiledragon/gomonkey/v2
+//
+// 一般需要在编译参数上，增加"-gcflags=-l或-gcflags=all=-l"，禁止内联优化
+// 执行方法：GOARCH=amd64 go test -gcflags=all=-l -v -run TestGoMonkey
+func TestGoMonkey(t *testing.T) {
+	// 对指定函数进行Mock
+	var patch = gomonkey.ApplyFunc(bar, func(n int) int {
+		return n + 2
+	})
+	defer patch.Reset()
+
+	if n := foo(1); n != 3 {
+		t.Errorf("result = %v", n)
+	}
+
+	// 对成员方法进行Mock
+	var testUser = &User{}
+	var patchMethod = gomonkey.ApplyPrivateMethod(reflect.TypeOf(testUser), "Handle", func(_ *User, n int) int {
+		return n + 1
+	})
+	if n := testUser.Handle(0); n != 1 {
+		t.Errorf("result = %v", n)
+	}
+	defer patchMethod.Reset()
+}
+
+// ****************************************************************
+// 字节跳动Mockey用法
+// ****************************************************************
+//
+// GoMonkey安装
+// go get github.com/bytedance/mockey
+//
+// 一般需要在编译参数上，增加"-gcflags=-l或-gcflags=all=-l"，禁止内联优化
+// 执行方法：go test -gcflags="all=-l -N" -v -run TestMockey	// 需要把monkey和gomonkey的代码注释掉，否则编译不通过
+func TestMockey(t *testing.T) {
+	// 对制定变量进行Mock
+	mockey.PatchConvey("TestMockeyVariable", t, func() {
+		var n = 1
+		var patch = mockey.MockValue(&n).To(100)
+		if n != 100 {
+			t.Errorf("result = %v", n)
+		}
+		patch.UnPatch()
+	})
+
+	// 对指定函数进行Mock
+	mockey.PatchConvey("TestMockeyFunc", t, func() {
+		var patch = mockey.Mock(bar).Return(100).Build()
+		if n := foo(1); n != 100 {
+			t.Errorf("result = %v", n)
+		}
+		patch.UnPatch()
+	})
+
+	// 对指定函数在特定条件下进行Mock
+	mockey.PatchConvey("TestMockeyFuncWithCondition", t, func() {
+		var patch = mockey.Mock(bar).When(func(n int) bool {
+			return n < 100
+		}).Return(100).Build()
+		if n := foo(1); n != 100 {
+			t.Errorf("result = %v", n)
+		}
+		if n := foo(100); n != 101 {
+			t.Errorf("result = %v", n)
+		}
+		patch.UnPatch()
+	})
+
+	// 对成员方法进行Mock
+	mockey.PatchConvey("TestMockeyMethod", t, func() {
+		var patch = mockey.Mock((*User).Handle).Return(100).Build()
+		if n := new(User).Handle(1); n != 100 {
+			t.Errorf("result = %v", n)
+		}
+		patch.UnPatch()
+	})
 }
