@@ -115,11 +115,10 @@ func TestMonkey(t *testing.T) {
 	}
 
 	// 对成员方法进行Mock
-	var testUser = &User{}
-	var patchInstance = monkey.PatchInstanceMethod(reflect.TypeOf(testUser), "Handle", func(_ *User, n int) int {
+	var patchInstance = monkey.PatchInstanceMethod(reflect.TypeOf(&User{}), "Handle", func(_ *User, n int) int {
 		return n + 1
 	})
-	if n := testUser.Handle(0); n != 1 {
+	if n := new(User).Handle(0); n != 1 {
 		t.Errorf("result = %v", n)
 	}
 	defer patchInstance.Unpatch()
