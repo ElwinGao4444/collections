@@ -25,10 +25,8 @@ func (s *server) SayHello(ctx context.Context, in *HelloRequest) (*HelloReply, e
 	return &HelloReply{Message: "Hello " + in.GetName()}, nil
 }
 
-func start_server() {
-	var port = flag.Int("port", 50051, "The server port")
-	flag.Parse()
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+func start_server(port int) {
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
@@ -41,14 +39,9 @@ func start_server() {
 
 }
 
-func client_call() {
-	var (
-		addr = flag.String("addr", "localhost:50051", "the address to connect to")
-		name = flag.String("name", "world", "Name to greet")
-	)
-	flag.Parse()
+func client_call(addr, name string) {
 	// Set up a connection to the server.
-	conn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
@@ -58,7 +51,7 @@ func client_call() {
 	// Contact the server and print out its response.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := c.SayHello(ctx, &HelloRequest{Name: *name})
+	r, err := c.SayHello(ctx, &HelloRequest{Name: name})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
@@ -66,7 +59,13 @@ func client_call() {
 }
 
 func main() {
-	go start_server()
+	var (
+		port = flag.Int("port", 50051, "The server port")
+		addr = flag.String("addr", "localhost:50051", "the address to connect to")
+		name = flag.String("name", "world", "Name to greet")
+	)
+	flag.Parse()
+	go start_server(*port)
 	time.Sleep(1 * time.Second)
-	client_call()
+	client_call(*addr, *name)
 }
