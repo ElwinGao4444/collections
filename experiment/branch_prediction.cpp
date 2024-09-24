@@ -33,6 +33,7 @@ int main(int argc, char *argv[])
 	const int n = 1000*1000;
 	int arr[n];
 	int sum = 0;
+	int count = 0;
 
 	// 随机初始化数组
 	std::srand(static_cast<unsigned int>(std::time(0)));
@@ -44,9 +45,10 @@ int main(int argc, char *argv[])
 	// std::sort(arr, arr + n);	// 排序以后，程序的执行性能明显提高
 
 	for (int i = 0; i < 100; i++) {
-		for (int i = 0; i < n; i++) {
-			if (arr[i] < 128) {	// 原因是，排序之前，if的分支预测准确率约为50%，会导致频繁清空流水线，但排序后，分支预测准确率接近100%
-				sum += arr[i];
+		for (int j = 0; j < n; j++) {
+			if (arr[j] < 128) {	// 原因是，排序之前，if的分支预测准确率约为50%，会导致频繁清空流水线，但排序后，分支预测准确率接近100%
+				sum += arr[j];
+				count++;
 			}
 		}
 	}
@@ -54,6 +56,7 @@ int main(int argc, char *argv[])
 
 	std::chrono::duration<double, std::milli> elapsed = end - start;
 	std::cout << "操作耗时: " << elapsed.count() << " 毫秒" << std::endl;
+	std::cout << count << std::endl;
 	return EXIT_SUCCESS;
 }				// ----------  end of function main  ----------
 
