@@ -37,9 +37,9 @@ func deref(t reflect.Type, v reflect.Value) (reflect.Type, reflect.Value) {
 func show(t reflect.Type, v reflect.Value) reflect.Kind {
 	var k = t.Kind()
 	if k == reflect.Ptr {
-		fmt.Println(k, t.Elem(), v.Elem()) // Elem()无论对Type和Value都有类似解引用的作用
+		fmt.Println(k, t.Elem().Name(), v.Elem()) // Elem()无论对Type和Value都有类似解引用的作用
 	} else {
-		fmt.Println(k, t, v)
+		fmt.Println(k, t.Name(), v)
 	}
 	return k
 }
