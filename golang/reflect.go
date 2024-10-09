@@ -19,13 +19,13 @@ type C struct {
 	f float32
 }
 
-// get type and value
+// 返回指定变量的反射信息
 func tv(i interface{}) (reflect.Type, reflect.Value) {
 	return reflect.TypeOf(i), reflect.ValueOf(i)
 }
 
-// get real type and value(dereference)
-func rtv(t reflect.Type, v reflect.Value) (reflect.Type, reflect.Value) {
+// 对反射信息进行解引用（如果是指针类型的话）
+func deref(t reflect.Type, v reflect.Value) (reflect.Type, reflect.Value) {
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 		v = v.Elem()
@@ -33,6 +33,7 @@ func rtv(t reflect.Type, v reflect.Value) (reflect.Type, reflect.Value) {
 	return t, v
 }
 
+// 对反射信息进行输出
 func show(t reflect.Type, v reflect.Value) reflect.Kind {
 	var k = t.Kind()
 	if k == reflect.Ptr {
@@ -43,10 +44,11 @@ func show(t reflect.Type, v reflect.Value) reflect.Kind {
 	return k
 }
 
+// 打印指定数据类型的反射信息（非递归）
 func print_all_element(i interface{}) {
 	fieldType, fieldValue := tv(i)
 	show(fieldType, fieldValue)
-	fieldType, fieldValue = rtv(fieldType, fieldValue)
+	fieldType, fieldValue = deref(fieldType, fieldValue)
 	for n := 0; n < fieldType.NumField(); n++ {
 		var t = fieldType.Field(n).Type
 		var v = fieldValue.Field(n)
@@ -54,9 +56,10 @@ func print_all_element(i interface{}) {
 	}
 }
 
+// 对指定的反射信息进行递归遍历
 func print_all_element_recursive(fieldType reflect.Type, fieldValue reflect.Value) {
 	show(fieldType, fieldValue)
-	fieldType, fieldValue = rtv(fieldType, fieldValue)
+	fieldType, fieldValue = deref(fieldType, fieldValue)
 	for n := 0; n < fieldType.NumField(); n++ {
 		var t = fieldType.Field(n).Type
 		var v = fieldValue.Field(n)
@@ -76,7 +79,9 @@ func main() {
 	fmt.Println("通过获取类型信息：", t)
 	fmt.Println("通过获取值信息：", v)
 	fmt.Println("----------------")
-	print_all_element(a) // 只有指针类型才能获取Elem()
+	fmt.Println("输出结构信息：")
+	print_all_element(a)
 	fmt.Println("----------------")
-	print_all_element_recursive(tv(a)) // 只有指针类型才能获取Elem()
+	fmt.Println("输出结构信息（递归）：")
+	print_all_element_recursive(tv(a))
 }
