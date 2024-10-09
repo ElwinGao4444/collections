@@ -34,40 +34,32 @@ func deref(t reflect.Type, v reflect.Value) (reflect.Type, reflect.Value) {
 }
 
 // 对反射信息进行输出
-func show(t reflect.Type, v reflect.Value) reflect.Kind {
+func show(n string, t reflect.Type, v reflect.Value) reflect.Kind {
 	var k = t.Kind()
-	if k == reflect.Ptr {
-		fmt.Println(k, t.Elem().Name(), v.Elem()) // Elem()无论对Type和Value都有类似解引用的作用
-	} else {
-		fmt.Println(k, t.Name(), v)
-	}
+	t, v = deref(t, v)
+	fmt.Println(k, t.Name(), n, v)
 	return k
 }
 
-// 打印指定数据类型的反射信息（非递归）
-func print_all_element(i interface{}) {
-	fieldType, fieldValue := tv(i)
-	show(fieldType, fieldValue)
-	fieldType, fieldValue = deref(fieldType, fieldValue)
-	for n := 0; n < fieldType.NumField(); n++ {
-		var t = fieldType.Field(n).Type
-		var v = fieldValue.Field(n)
-		show(t, v)
-	}
+// 打印指定数据类型的反射信息
+func print_all_element(n string, i interface{}) {
+	t, v := tv(i)
+	print_all_element_recursive(n, t, v)
 }
 
 // 对指定的反射信息进行递归遍历
-func print_all_element_recursive(fieldType reflect.Type, fieldValue reflect.Value) {
-	show(fieldType, fieldValue)
+func print_all_element_recursive(name string, fieldType reflect.Type, fieldValue reflect.Value) {
+	show(name, fieldType, fieldValue)
 	fieldType, fieldValue = deref(fieldType, fieldValue)
-	for n := 0; n < fieldType.NumField(); n++ {
-		var t = fieldType.Field(n).Type
-		var v = fieldValue.Field(n)
+	for i := 0; i < fieldType.NumField(); i++ {
+		var n = fieldType.Field(i).Name
+		var t = fieldType.Field(i).Type
+		var v = fieldValue.Field(i)
 		if t.Kind() == reflect.Ptr && v.IsNil() {
 			v = reflect.New(t.Elem())
 		}
 		if t.Kind() == reflect.Struct || t.Kind() == reflect.Ptr {
-			print_all_element_recursive(t, v)
+			print_all_element_recursive(n, t, v)
 		}
 	}
 }
@@ -80,8 +72,5 @@ func main() {
 	fmt.Println("通过获取值信息：", v)
 	fmt.Println("----------------")
 	fmt.Println("输出结构信息：")
-	print_all_element(a)
-	fmt.Println("----------------")
-	fmt.Println("输出结构信息（递归）：")
-	print_all_element_recursive(tv(a))
+	print_all_element("a", a)
 }
