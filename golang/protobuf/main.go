@@ -10,6 +10,7 @@ import (
 )
 
 func use_simple_persion() {
+	log.Println("================ Case[use_simple_persion] ================")
 	var data []byte
 	var err error
 	var old_obj *SimplePerson
@@ -44,6 +45,7 @@ func use_simple_persion() {
 }
 
 func use_complex_persion() {
+	log.Println("================ Case[use_complex_persion] ================")
 	var data []byte
 	var err error
 	var old_obj *ComplexPerson
@@ -77,7 +79,24 @@ func use_complex_persion() {
 	log.Println("Marshal: ", new_obj)
 }
 
+func message_merge() {
+	log.Println("================ Case[message_merge] ================")
+
+	// 根据实测结果：
+	// 1. 非集合类型，新数据覆盖老数据
+	// 2. 0值类型，不会覆盖老数据
+	// 3. 集合类型，追加而非合并
+	var obj1 = &SimplePerson{Name: "foo", Male: true, Scores: []int32{1, 2, 3}}
+	var obj2 = &SimplePerson{Name: "bar", Male: false, Scores: []int32{4, 5, 6}}
+
+	log.Println("obj1: ", obj1)
+	log.Println("obj2: ", obj2)
+	pb.Merge(obj1, obj2)
+	log.Println("merge_obj1: ", obj1)
+}
+
 func main() {
 	use_simple_persion()
 	use_complex_persion()
+	message_merge()
 }
