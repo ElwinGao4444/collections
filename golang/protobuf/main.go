@@ -86,8 +86,10 @@ func message_merge() {
 
 	// 根据实测结果：
 	// 1. 非集合类型，新数据覆盖老数据
-	// 2. 0值类型，不会覆盖老数据
+	// 2. 新字段为空值，不会覆盖老数据
 	// 3. 集合类型，追加而非合并
+	// 在edition版本中，由于所有的字段都是指针，所以不会出现0值的歧义问题
+	// 但是在proto3中，字段为实际类型（比如bool），当新值赋值为0（比如false）值时，会导致pb认为该值是初始0值，从而不对老数据进行覆盖，导致出现奇奇怪怪的问题
 	var obj1 = &SimplePerson{Name: pb.String("foo"), Male: pb.Bool(true), Scores: []int32{1, 2, 3}}
 	var obj2 = &SimplePerson{Name: pb.String("bar"), Male: pb.Bool(false), Scores: []int32{4, 5, 6}}
 
