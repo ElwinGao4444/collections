@@ -106,7 +106,7 @@ func message_extensions() {
 	}
 	pb.SetExtension(&user_content, E_Person, extData)
 	fmt.Println("HasExtension:", pb.HasExtension(&user_content, E_Person))
-	var extDataOut = pb.GetExtension(&user_content, E_Person)
+	var extDataOut = pb.GetExtension(&user_content, E_Person).([]*SimplePerson)
 	fmt.Println("GasExtension:", extDataOut)
 	pb.RangeExtensions(&user_content, func(etype protoreflect.ExtensionType, edata any) bool {
 		fmt.Println("RangeExtension:", edata)
