@@ -4,9 +4,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 
 	pb "google.golang.org/protobuf/proto"
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 )
 
 func use_simple_persion() {
@@ -17,7 +19,7 @@ func use_simple_persion() {
 	var new_obj *SimplePerson
 
 	// 定义一个结构体
-	old_obj = &SimplePerson{Name: "foo", Male: true, Scores: []int32{60, 70, 80}}
+	old_obj = &SimplePerson{Name: pb.String("foo"), Male: pb.Bool(true), Scores: []int32{60, 70, 80}}
 
 	// 使用json序列化
 	if data, err = json.Marshal(old_obj); err != nil {
@@ -53,9 +55,9 @@ func use_complex_persion() {
 
 	// 定义一个结构体
 	old_obj = &ComplexPerson{
-		Base: &PersonBase{Id: 1234, Name: "John Doe", Email: "jdoe@example.com"},
+		Base: &PersonBase{Id: pb.Int32(1234), Name: pb.String("John Doe"), Email: pb.String("jdoe@example.com")},
 		Phones: []*ComplexPerson_PhoneNumber{ // 内嵌结构体的引用
-			{Number: "555-4321", Type: PhoneType_PHONE_TYPE_HOME},
+			{Number: pb.String("555-4321"), Type: (*PhoneType)(pb.Int32(int32(PhoneType_PHONE_TYPE_HOME)))},
 		},
 	}
 
@@ -86,8 +88,8 @@ func message_merge() {
 	// 1. 非集合类型，新数据覆盖老数据
 	// 2. 0值类型，不会覆盖老数据
 	// 3. 集合类型，追加而非合并
-	var obj1 = &SimplePerson{Name: "foo", Male: true, Scores: []int32{1, 2, 3}}
-	var obj2 = &SimplePerson{Name: "bar", Male: false, Scores: []int32{4, 5, 6}}
+	var obj1 = &SimplePerson{Name: pb.String("foo"), Male: pb.Bool(true), Scores: []int32{1, 2, 3}}
+	var obj2 = &SimplePerson{Name: pb.String("bar"), Male: pb.Bool(false), Scores: []int32{4, 5, 6}}
 
 	log.Println("obj1: ", obj1)
 	log.Println("obj2: ", obj2)
@@ -95,8 +97,26 @@ func message_merge() {
 	log.Println("merge_obj1: ", obj1)
 }
 
+func message_extensions() {
+	log.Println("================ Case[message_extensions] ================")
+	var user_content UserContent
+	var extData = []*SimplePerson{
+		&SimplePerson{Name: pb.String("z3"), Male: pb.Bool(true), Scores: []int32{1, 3, 5}},
+		&SimplePerson{Name: pb.String("l4"), Male: pb.Bool(false), Scores: []int32{2, 4, 6}},
+	}
+	pb.SetExtension(&user_content, E_Person, extData)
+	fmt.Println("HasExtension:", pb.HasExtension(&user_content, E_Person))
+	var extDataOut = pb.GetExtension(&user_content, E_Person)
+	fmt.Println("GasExtension:", extDataOut)
+	pb.RangeExtensions(&user_content, func(etype protoreflect.ExtensionType, edata any) bool {
+		fmt.Println("RangeExtension:", edata)
+		return true // true:继续循环，false:停止循环
+	})
+}
+
 func main() {
 	use_simple_persion()
 	use_complex_persion()
 	message_merge()
+	message_extensions()
 }

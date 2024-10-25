@@ -1,13 +1,13 @@
-// MacOS: brew install protobuf@3
+// MacOS: brew install protobuf
 // protoc --go_out=. message.proto
 
-// syntax定义必须在第一行，否则不生效
-syntax = "proto3";
+// syntax = "proto3";
+edition = "2023";   // protobuf的最新版本形式，可以同时支持proto2和proto3的功能
 package main;
-
-import "google/protobuf/timestamp.proto";
 // 指定RPC文件生成路径地址与包名
 option go_package ="./;main";	// “;”分割，前路径，后包名（可选，默认路径名）
+
+import "google/protobuf/timestamp.proto";
 
 message SimplePerson {
 	string name = 1;
@@ -46,3 +46,25 @@ message AddressBook {
 	repeated SimplePerson simple_people = 1;
 	repeated ComplexPerson complex_people = 2;
 }
+
+/* proto3不支持extensions功能，只有proto2和edition才支持 */
+
+// A container message to hold stuff that a user has created.
+message UserContent {
+  extensions 100 to 199 [
+    declaration = {
+      number: 100,
+      full_name: ".main.person",
+      type: ".main.SimplePerson",
+      repeated: true
+    },
+    // Ensures all field numbers in this extension range are declarations.
+    verification = DECLARATION
+  ];
+}
+
+// This extension allows person in a UserContent message.
+extend UserContent {
+  repeated SimplePerson person = 100;
+}
+
