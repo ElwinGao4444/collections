@@ -63,7 +63,8 @@ func use_partial_persion() {
 	log.Println("Json Marshal: ", string(data))
 
 	// 使用pb序列化
-	if data, err = pb.Marshal(old_obj); err != nil {
+	var opt = pb.MarshalOptions{AllowPartial: true}
+	if data, err = opt.Marshal(old_obj); err != nil {
 		log.Fatal("marshaling error: ", err)
 	}
 	log.Println("Marshal: ", data)
@@ -80,6 +81,47 @@ func use_partial_persion() {
 	// 监测序列化与反序列化的数据一致性
 	if old_obj.GetName() != new_obj.GetName() {
 		log.Fatalf("data mismatch %q != %q", old_obj.GetName(), new_obj.GetName())
+	}
+}
+
+func use_append_persion() {
+	log.Println("================ Case[use_append_persion] ================")
+	var data []byte
+	var err error
+	var new_obj *SimplePerson
+
+	// 定义一个结构体
+	var old_obj1 = &SimplePerson{Name: pb.String("foo"), Male: pb.Bool(true), Scores: []int32{60, 70, 80}}
+	var old_obj2 = &SimplePerson{Name: pb.String("bar"), Male: pb.Bool(false), Scores: []int32{10, 20, 30}}
+
+	// 使用json序列化
+	if data, err = json.Marshal(old_obj1); err != nil {
+		log.Fatal("json marshaling error: ", err)
+	}
+	log.Println("Json Marshal: ", string(data))
+
+	// 使用pb序列化
+	var opt = pb.MarshalOptions{}
+	if data, err = opt.MarshalAppend(data[:0], old_obj1); err != nil {
+		log.Fatal("marshaling error: ", err)
+	}
+	log.Println("Marshal1: ", data)
+	if data, err = opt.MarshalAppend(data[:len(data)], old_obj2); err != nil {
+		log.Fatal("marshaling error: ", err)
+	}
+	log.Println("Marshal2: ", data)
+
+	// 使用pb反序列化
+	new_obj = &SimplePerson{}
+	if err = pb.Unmarshal(data, new_obj); err != nil {
+		log.Fatal("unmarshaling error: ", err)
+	}
+	log.Println("Marshal: ", new_obj)
+	log.Println("Marshal: ", new_obj.GetName())
+
+	// 监测序列化与反序列化的数据一致性
+	if old_obj2.GetName() != new_obj.GetName() {
+		log.Fatalf("data mismatch %q != %q", old_obj2.GetName(), new_obj.GetName())
 	}
 }
 
@@ -156,6 +198,7 @@ func message_extensions() {
 func main() {
 	use_simple_persion()
 	use_partial_persion()
+	use_append_persion()
 	use_complex_persion()
 	message_merge()
 	message_extensions()
