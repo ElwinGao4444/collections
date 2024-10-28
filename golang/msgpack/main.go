@@ -146,6 +146,34 @@ func decode_query_array_map() {
 	fmt.Println("2nd phone is", values[0])
 }
 
+func partial_unmarshal() {
+	type FullData struct {
+		ID      int
+		Name    string
+		Age     int
+		Address string
+	}
+
+	type PartialData struct {
+		Name string
+		Age  int
+	}
+
+	fullData := FullData{ID: 1, Name: "John", Age: 30, Address: "123 Main St"}
+	b, err := msgpack.Marshal(fullData)
+	if err != nil {
+		panic(err)
+	}
+
+	var partialData PartialData
+	err = msgpack.Unmarshal(b, &partialData)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Partial Data: %+v\n", partialData)
+}
+
 func main() {
 	simple_marshal_unmashal()
 	as_array()
@@ -153,4 +181,5 @@ func main() {
 	omit_empty()
 	decode_query()
 	decode_query_array_map()
+	partial_unmarshal()
 }
