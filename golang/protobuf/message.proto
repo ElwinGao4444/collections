@@ -15,6 +15,10 @@ message SimplePerson {
 	repeated int32 scores = 3;
 }
 
+message PartialPerson {
+	string name = 1;
+}
+
 message PersonBase {
 	int32 id = 1;
 	string name = 2;
