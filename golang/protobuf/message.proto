@@ -17,6 +17,7 @@ message SimplePerson {
 
 message PartialPerson {
 	string name = 1;
+    int32 ext = 4;
 }
 
 message PersonBase {

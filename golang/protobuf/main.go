@@ -75,6 +75,7 @@ func use_partial_persion() {
 	}
 	log.Println("Marshal: ", new_obj)
 	log.Println("Marshal: ", new_obj.GetName())
+	log.Println("Marshal: ", new_obj.GetExt())
 
 	// 监测序列化与反序列化的数据一致性
 	if old_obj.GetName() != new_obj.GetName() {
