@@ -8,6 +8,35 @@ import (
 	flatbuffers "github.com/google/flatbuffers/go"
 )
 
+func simple_test() {
+	builder := flatbuffers.NewBuilder(0)
+
+	// 生成字符串
+	var str = builder.CreateString("demo string")
+
+	// 生成数组
+	sample.TestStartArrVector(builder, 10)
+	for i := 9; i >= 0; i-- {
+		builder.PrependByte(byte(i))
+	}
+	var arr = builder.EndVector(10)
+
+	sample.TestStart(builder)
+	sample.TestAddNum(builder, 7)   // 增加数字
+	sample.TestAddStr(builder, str) // 增加字符串
+	sample.TestAddArr(builder, arr) // 增加数组
+
+	var off = sample.TestEnd(builder)
+	builder.Finish(off)
+	var buf = builder.FinishedBytes()
+	log.Println("test buf:", buf)
+
+	var obj = sample.GetRootAsTest(buf, 0)
+	log.Println("num:", obj.Num())
+	log.Println("str:", string(obj.Str()))
+	log.Println("arr[0]:", obj.Arr(0))
+}
+
 func assert(assertPassed bool, codeExecuted string, actualValue string, expectedValue string) {
 	if assertPassed == false {
 		panic("Assert failed! " + codeExecuted + " (" + actualValue +
@@ -149,6 +178,7 @@ func sample_unmarshal(buf []byte) {
 }
 
 func main() {
+	simple_test()
 	var buf = sample_marshal()
 	sample_unmarshal(buf)
 }

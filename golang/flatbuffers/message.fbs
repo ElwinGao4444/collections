@@ -32,3 +32,11 @@ table Weapon {
 }
 
 root_type Monster;
+
+table Test {
+  num:short;
+  str:string;
+  arr:[ubyte];
+}
+
+root_type Test;
