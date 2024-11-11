@@ -98,7 +98,7 @@ func use_marshal_append_persion() {
 	log.Println("unarshal: ", &new_obj)
 }
 
-func use_unmarshal_multi_persion() {
+func use_unmarshal_merge_persion() {
 	log.Println("================ Case[use_unmarshal_merge_persion] ================")
 	// 定义一个结构体
 	var old_obj1 = SimplePerson{Name: proto.String("foo"), Male: proto.Bool(true), Scores: []int32{60, 70, 80}}
@@ -112,15 +112,8 @@ func use_unmarshal_multi_persion() {
 	data2, _ := proto.MarshalOptions{}.Marshal(&old_obj2)
 	log.Println("marshal2: ", data2)
 
-	// 使用pb替换式反序列化
+	// 使用pb合并反序列化
 	var new_obj = SimplePerson{}
-	proto.Unmarshal(data1, &new_obj)
-	log.Println("unmarshal replace 1: ", &new_obj)
-	proto.Unmarshal(data2, &new_obj)
-	log.Println("unmarshal replace 2: ", &new_obj)
-
-	// 使用pb合并式反序列化
-	new_obj = SimplePerson{}
 	proto.UnmarshalOptions{Merge: true}.Unmarshal(data1, &new_obj)
 	log.Println("unmarshal merge 1: ", &new_obj)
 	proto.UnmarshalOptions{Merge: true}.Unmarshal(data2, &new_obj)
@@ -167,7 +160,7 @@ func main() {
 	use_complex_persion()
 	use_partial_persion()
 	use_marshal_append_persion()
-	use_unmarshal_multi_persion()
+	use_unmarshal_merge_persion()
 	message_merge()
 	message_extensions()
 }
