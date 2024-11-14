@@ -74,3 +74,7 @@ extend UserContent {
   repeated SimplePerson person = 100;
 }
 
+message SpliceMapBenchmark {
+	repeated int32 data_slice = 1;
+	map<int32, int32> data_map = 2;
+}

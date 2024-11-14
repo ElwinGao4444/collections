@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -155,6 +156,39 @@ func message_extensions() {
 	})
 }
 
+func benchmark_slice_map() {
+	log.Println("================ Case[benchmark_slice_map] ================")
+	var n = 100000
+	var s = make([]int32, n)
+	var m = make(map[int32]int32, n)
+	for i := 0; i < n; i++ {
+		s[i] = int32(i)
+		m[int32(i)] = int32(i)
+	}
+
+	var data []byte
+	var res = SpliceMapBenchmark{}
+	var start time.Time
+
+	start = time.Now()
+	var bench_slice = SpliceMapBenchmark{DataSlice: s}
+	data, _ = proto.Marshal(&bench_slice)
+	log.Println("slice marshal:", time.Since(start))
+
+	start = time.Now()
+	proto.Unmarshal(data, &res)
+	log.Println("slice unmarshal:", time.Since(start))
+
+	start = time.Now()
+	var bench_map = SpliceMapBenchmark{DataMap: m}
+	data, _ = proto.Marshal(&bench_map)
+	log.Println("map marshal:", time.Since(start))
+
+	start = time.Now()
+	proto.Unmarshal(data, &res)
+	log.Println("map unmarshal:", time.Since(start))
+}
+
 func main() {
 	use_simple_persion()
 	use_complex_persion()
@@ -163,4 +197,5 @@ func main() {
 	use_unmarshal_merge_persion()
 	message_merge()
 	message_extensions()
+	benchmark_slice_map()
 }
