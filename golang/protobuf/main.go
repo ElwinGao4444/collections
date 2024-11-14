@@ -4,7 +4,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
@@ -147,11 +146,11 @@ func message_extensions() {
 		&SimplePerson{Name: proto.String("l4"), Male: proto.Bool(false), Scores: []int32{2, 4, 6}},
 	}
 	proto.SetExtension(&user_content, E_Person, extData)
-	fmt.Println("HasExtension:", proto.HasExtension(&user_content, E_Person))
+	log.Println("HasExtension:", proto.HasExtension(&user_content, E_Person))
 	var extDataOut = proto.GetExtension(&user_content, E_Person).([]*SimplePerson)
-	fmt.Println("GasExtension:", extDataOut)
+	log.Println("GasExtension:", extDataOut)
 	proto.RangeExtensions(&user_content, func(etype protoreflect.ExtensionType, edata any) bool {
-		fmt.Println("RangeExtension:", edata)
+		log.Println("RangeExtension:", edata)
 		return true // true:继续循环，false:停止循环
 	})
 }
