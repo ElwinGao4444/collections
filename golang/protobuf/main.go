@@ -1,5 +1,7 @@
 package main
 
+// 安装protoc：brew install protobuf
+// 安装protoc-gen-go：go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 // 启动方式：protoc --go_out=. message.proto && go run main.go message.pb.go
 
 import (
