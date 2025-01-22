@@ -1,0 +1,3 @@
+**/go.sum
+**/*.pb.go
+**/*_mock.go
