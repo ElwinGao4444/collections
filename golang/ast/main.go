@@ -35,13 +35,12 @@ func inspectTree(fset *token.FileSet, node *ast.File) {
 func applyTree(file *ast.File) *ast.File {
 	file.Name = ast.NewIdent("out") // 修改包名
 	file = astutil.Apply(file, nil, func(cursor *astutil.Cursor) bool {
-		n := cursor.Node()
-		funcDecl, ok := n.(*ast.FuncDecl)
-		if ok {
-			fundIdent := funcDecl.Name
-			if fundIdent.Name == "main" {
-				fmt.Println("visitor fundIdent:", fundIdent)
-				fundIdent.Name = "main_out" // 修改函数名
+		switch t := cursor.Node().(type) {
+		case *ast.FuncDecl:
+			var funcIdent = t.Name
+			if funcIdent.Name == "main" {
+				fmt.Println("funcIdent:", funcIdent)
+				funcIdent.Name = "main_out" // 修改函数名
 				return false                // 终止遍历
 			}
 		}
