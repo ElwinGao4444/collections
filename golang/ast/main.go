@@ -15,13 +15,18 @@ func main() {
 	inputContent, _ := os.ReadFile("./main.go") // 读取输入文件内容
 	fset := token.NewFileSet()
 	node, _ := parser.ParseFile(fset, "", inputContent, parser.ParseComments) // 解析代码为 AST
+	ast.Print(fset, node)                                                     // 打印语法树
+	fmt.Println("----------------")
 	// node.Name = ast.NewIdent(packageName) // 修改包名
 
 	// 定义 visitor 函数
 	visitor := func(cursor *astutil.Cursor) bool {
 		n := cursor.Node()
-		fmt.Println("visitor:", n)
-		return true
+		// 根据ast.Print的结构进行遍历
+		if funcDecl, ok := n.(*ast.FuncDecl); ok {
+			fmt.Println("visitor funcDecl:", funcDecl)
+		}
+		return true // 返回 false 会终止遍历
 	}
 
 	node = astutil.Apply(node, nil, visitor).(*ast.File) // 应用 visitor 到 AST
