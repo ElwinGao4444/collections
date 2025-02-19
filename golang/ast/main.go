@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/printer"
+	"go/scanner"
 	"go/token"
 	"os"
 
@@ -49,10 +50,47 @@ func applyTree(file *ast.File) *ast.File {
 	return file
 }
 
-func basic_usage() {
-	inputContent, _ := os.ReadFile("main.go") // 读取输入文件内容
+func scanner_code_usage() {
+	src := []byte("cos(x) + 1i*sin(x) // Euler")
+
 	fset := token.NewFileSet()
-	file, _ := parser.ParseFile(fset, "main.go", inputContent, parser.ParseComments) // 解析代码为 AST(第二个参数和第三个参数，任选1个都可以作为输入代码)
+	file := fset.AddFile("", fset.Base(), len(src))
+
+	var s scanner.Scanner
+	s.Init(file, src, nil, scanner.ScanComments)
+
+	for {
+		pos, tok, lit := s.Scan()
+		if tok == token.EOF {
+			break
+		}
+		fmt.Printf("%s\t%s\t%q\n", fset.Position(pos), tok, lit)
+	}
+}
+
+func scanner_file_usage() {
+	filename := "main.go"
+	inputContent, _ := os.ReadFile(filename) // 读取输入文件内容
+	fset := token.NewFileSet()
+	fileToken := fset.AddFile(filename, fset.Base(), len(inputContent))
+
+	var s scanner.Scanner
+	s.Init(fileToken, inputContent, nil, scanner.ScanComments)
+
+	for {
+		pos, tok, lit := s.Scan()
+		if tok == token.EOF {
+			break
+		}
+		fmt.Printf("%s\t%s\t%q\n", fset.Position(pos), tok, lit)
+	}
+}
+
+func parser_usage() {
+	filename := "main.go"
+	inputContent, _ := os.ReadFile(filename) // 读取输入文件内容
+	fset := token.NewFileSet()
+	file, _ := parser.ParseFile(fset, filename, inputContent, parser.ParseComments) // 解析代码为 AST(第二个参数和第三个参数，任选1个都可以作为输入代码)
 
 	printTree(fset, file)
 	inspectTree(fset, file)
@@ -65,7 +103,7 @@ func basic_usage() {
 	printer.Fprint(output, fset, file) // 将修改后的 AST 写入输出文件
 }
 
-func marcos_replace() {
+func astutil_usage() {
 	var src = `                                                                                                                                                                                                                              
 package tmp
 const a_b_c = 1.0
@@ -111,6 +149,8 @@ var x = func(){return a_b_c}()
 }
 
 func main() {
-	basic_usage()
-	marcos_replace()
+	// scanner_code_usage()
+	// scanner_file_usage()
+	// parser_usage()
+	// astutil_usage()
 }
