@@ -13,19 +13,3 @@ npm run dev
 ## VUE单文件演练
 Vue SFC Playground
 https://play.vuejs.org/
-
-# 项目构建
-
-## vue-native
-官方文档： https://vue-native.io/
-
-### 安装Vue Native构建工具
-npm install --global vue-native-cli
-npm install --global expo-cli
-
-### 创建一个项目
-vue-native init <projectName>
-
-### 启动项目
-cd <projectName>
-npm start
