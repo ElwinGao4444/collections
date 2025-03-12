@@ -6,6 +6,9 @@ project (demo VERSION 1.0)	# 定义项目名称和版本
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# 设置生成compile_commands.json
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)	# 所有FLAG都可以通过 -D参数在命令行指定，例如：cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .
+
 # 添加头文件搜索路径
 include_directories (a b)
 

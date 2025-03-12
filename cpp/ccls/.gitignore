@@ -1,6 +1,9 @@
 CMakeFiles/
 CMakeCache.txt
-Makefile
 cmake_install.cmake
+compile_commands.json
+Makefile
 *.a
+*.log
+.ccls-cache/
 main
