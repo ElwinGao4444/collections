@@ -10,21 +10,17 @@
 import os
 import sys
 import json
-import subprocess
 import threading
-from queue import Queue
+import subprocess
 from pylsp_jsonrpc.streams import JsonRpcStreamReader, JsonRpcStreamWriter
 
 class ccls:
-
     # 构造函数
     def __init__(self):
         self.request_id = 0
         self.reader = None
         self.writer = None
         self.process = None
-        self.indexing_done = threading.Event()
-        self.message_queue = Queue()
 
     def start(self):
         # 启动ccls server
@@ -60,11 +56,10 @@ class ccls:
     # 定义reader的消息处理函数
     def message_consumer(self, message):
         print(f"Received: {json.dumps(message, indent=2)}")
-        self.indexing_done.set()
 
     # 定义writer的消息发送函数
     def send_request(self, method, params):
-        self.request_id = self.request_id + 1
+        self.request_id += 1
         request = {
             "jsonrpc": "2.0",
             "id": self.request_id,
