@@ -25,7 +25,7 @@ class ccls:
 
     def start(self):
         # 启动ccls server
-        ccls_command = ['ccls', '-init={"index":{"onChange":true}}', '--log-file=./ccls.log', '-v=2']
+        ccls_command = ['ccls', '--init={"index":{"onChange":true}}', '--log-file=./ccls.log', '-v=2']
         self.process = subprocess.Popen(ccls_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # 将stdin和stdout嫁接json-rpc
