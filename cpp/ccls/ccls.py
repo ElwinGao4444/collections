@@ -17,6 +17,7 @@ from pylsp_jsonrpc.streams import JsonRpcStreamReader, JsonRpcStreamWriter
 class ccls:
     # 构造函数
     def __init__(self):
+        self.current_path = os.path.abspath(os.getcwd()) + '/'
         self.request_id = 0
         self.reader = None
         self.writer = None
@@ -24,7 +25,6 @@ class ccls:
 
     def start(self):
         # 启动ccls server
-        project_root = os.getcwd()
         ccls_command = ['ccls', '-init={"index":{"onChange":true}}', '--log-file=./ccls.log', '-v=2']
         self.process = subprocess.Popen(ccls_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -38,7 +38,7 @@ class ccls:
         reader_thread.start()
 
         # Initialize the server
-        init_params = {"rootUri": f"file://{os.path.abspath(project_root)}"}
+        init_params = {"rootUri": f"file://{self.current_path}"}
 
         self.send_request("initialize", init_params)
 
@@ -79,17 +79,17 @@ class ccls:
         self.writer.write(notification)
 
     def info(self, file):
-        index_params = {"textDocument": {"uri": f"file://{file}"}}
+        index_params = {"textDocument": {"uri": f"file://{self.current_path+file}"}}
         self.send_request("$ccls/info", index_params)
 
     def symble(self, file):
-        symble_params = {"textDocument": {"uri": f"file://{file}"}}
+        symble_params = {"textDocument": {"uri": f"file://{self.current_path+file}"}}
         self.send_request("textDocument/documentSymbol", symble_params)
 
     def did_open(self, file):
         did_open_params = {
         "textDocument": {
-            "uri": f"file://{file}"},
+            "uri": f"file://{self.current_path+file}"},
             "languageId": "cpp",
             "version": 1,
         }
@@ -97,19 +97,19 @@ class ccls:
 
     def did_close(self, file):
         did_close_params = {
-        "textDocument": {"uri": f"file://{file}"}}
+        "textDocument": {"uri": f"file://{self.current_path+file}"}}
         self.send_notification("textDocument/didClose", did_close_params)
 
     def goto_defination(self, file, line, column):
         definition_params = {
-            "textDocument": {"uri": f"file://{file}"},
+            "textDocument": {"uri": f"file://{self.current_path+file}"},
             "position": {"line": int(line), "character": int(column)},
         }
         self.send_request("textDocument/definition", definition_params)
 
     def find_reference(self, file, line, column):
         reference_params = {
-            "textDocument": {"uri": f"file://{file}"},
+            "textDocument": {"uri": f"file://{self.current_path+file}"},
             "position": {"line": int(line), "character": int(column)},
             "context": {"includeDeclaration": True},
         }

@@ -6,7 +6,10 @@ cmake . && make
 python ccls.py
 
 3. 进行交互式操作
-详见ccls.py主函数的命令映射
+o main.cpp          # 打开指定文件
+c main.cpp          # 关闭指定文件
+d main.cpp 33 17    # 根据行号/列号查找defination
+r main.cpp 33 17    # 根据行号/列号查找reference
 
 # reference
 lsp: https://microsoft.github.io/language-server-protocol/
