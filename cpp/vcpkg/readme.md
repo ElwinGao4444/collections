@@ -1,5 +1,6 @@
-# vcpkg官方文档
+# vcpkg官方页面
 https://learn.microsoft.com/zh-cn/vcpkg/
+https://vcpkg.io/en/packages?query=
 
 # vcpkg的配置与用法
 ## 下载vcpkg库并配置环境变量
@@ -36,3 +37,6 @@ vcpkg add port fmt
 cmake --preset=default
 cmake --build build
 ./build/main
+
+# 补充说明
+1. 对于target_link_libraries中的namespace::lib，具体要如何命名，按照官方文档解析，需要开发者提供明确的usage文件，如果开发者没有提供使用说明，那么就不得不去深挖三方库的构建系统
