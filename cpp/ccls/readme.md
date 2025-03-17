@@ -3,6 +3,8 @@
 cmake . && make
 
 2. 对指定代码进行基于语法的LSP操作
+brew install ccls
+pip install python-lsp-jsonrpc
 python ccls.py
 
 3. 进行交互式操作
