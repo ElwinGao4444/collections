@@ -9,9 +9,11 @@ python ccls.py
 
 3. 进行交互式操作
 o main.cpp          # 打开指定文件
-c main.cpp          # 关闭指定文件
 d main.cpp 33 17    # 根据行号/列号查找defination
-r main.cpp 33 17    # 根据行号/列号查找reference
+c main.cpp          # 关闭指定文件
+o a/a.cpp           # 打开指定文件
+r a/a.cpp 20 4      # 根据行号/列号查找reference
+c a/a.cpp           # 关闭指定文件
 
 # reference
 lsp: https://microsoft.github.io/language-server-protocol/
