@@ -1,0 +1,64 @@
+1. 顶级作用域下的变量替换：VarStr: {{.VarStr}}, VarInt: {{.VarInt}}
+2. 去除前后空白符：^  {{- .VarStr -}}  $
+3. 模版注释：{{/* this line is a comment */}}
+
+4. pipeline用法（pipeline类似于表达式的概念）
+4.1 {{`"pipe"`}}
+4.2 {{printf "%q" "pipe"}}
+4.3 {{"pipe" | printf "%q"}}
+4.4 {{printf "%q" (print "pi" "pe")}}
+4.5 {{"pe" | printf "%s%s" "pi" | printf "%q"}}
+4.6 {{"pipe" | printf "%s" | printf "%q"}}
+
+5. 变量定义
+5.1 首次定义的变量：{{$len := (len "hello")}} {{print $len}}
+5.2 多次定义的变量：{{$len = (len "hello world")}} {{print $len}}
+5.3 特殊的顶级域全局变量：{{print $}}	{{/* “$”表示顶级作用域的全局变量 */}}
+5.4 特殊的当前域全局变量：{{print .}}	{{/* “.”表示当前作用域的全局变量 */}}
+
+6. 条件语句
+{{if gt 2 1}} if条件命中 {{end}}
+{{if gt 1 2}} if条件命中 {{else}} else条件命中 {{end}}
+{{if gt 1 2}} if条件命中 {{else if gt 3 1}} else if 条件命中 {{end}}
+{{if gt 1 2}} if条件命中 {{else}} {{if gt 3 1}} else if 条件命中 {{end}} {{end}}
+
+7. 循环语句：可对var、slice、map、chan进行循环
+range语句内部支持break和continue进行循环控制
+{{range .VarInt}} range-{{.}} {{end}}
+{{range 0}} range-{{.}} {{else}} range-else-{{.}} {{end}}	{{/* else的时候，就退出if域了 */}}
+{{range $element := .VarSliceInt}} range-{{$element}} {{end}}
+{{range $key, $value := .VarMapStringInt}} range-{{$key}}-{{$value}} {{end}}
+
+8. with的用法：with主要用于重新划定作用域“.”
+{{with 1}} with-{{.}} {{end}}
+{{with 0}} with-{{.}} {{else}} with-else-{{.}} {{end}}	{{/* else的时候，就退出with域了 */}}
+
+9. 内置函数列表：
+9.1 内置函数
+and: 与关系，亦可替代if-else：and x y等价于if x then y else x
+or: 或关系，亦可替代if-else：or x y等价于if x then x else y
+not: 布尔取反
+print: 等价于fmt.Sprint
+printf: 等价于fmt.Sprintf
+println: 等价于fmt.Sprintln
+len: 等价于golang的len方法
+index: 按下标取数据。例如：index x 1 2 3代表的是x[1][2][3]
+call: 外部函数调用（必须是代码传入的func，不能是template的func）。例如：call .X.Y 1 2，其中Y必须是func类型，1和2为参数
+9.2 比较函数
+eq: 用法：eq arg1 arg2
+ne: 用法：ne arg1 arg2
+lt: 用法：lt arg1 arg2
+le: 用法：le arg1 arg2
+gt: 用法：gt arg1 arg2
+ge: 用法：ge arg1 arg2
+
+10. template嵌套（模板之间的变量是不会继承）
+{{define "T1"}} ONE {{print .}} {{end}}
+{{define "T2"}} TWO {{print .}} {{end}}
+{{define "T3"}} {{template "T1"}} {{template "T2" "args"}} {{end}}
+{{template "T3"}}
+
+11. block块（语法糖：相当于连续执行了define和template）
+{{block "B1" .}} block-B1 {{end}}
+
+参考文档：https://www.cnblogs.com/CxAgoni/p/17962581
