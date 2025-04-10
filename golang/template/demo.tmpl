@@ -27,6 +27,7 @@ range语句内部支持break和continue进行循环控制
 {{range .VarInt}} range-{{.}} {{end}}
 {{range 0}} range-{{.}} {{else}} range-else-{{.}} {{end}}	{{/* else的时候，就退出if域了 */}}
 {{range $element := .VarSliceInt}} range-{{$element}} {{end}}
+{{range $element := .VarChanInt}} range-{{$element}} {{end}}
 {{range $key, $value := .VarMapStringInt}} range-{{$key}}-{{$value}} {{end}}
 
 8. with的用法：with主要用于重新划定作用域“.”
@@ -60,5 +61,10 @@ ge: 用法：ge arg1 arg2
 
 11. block块（语法糖：相当于连续执行了define和template）
 {{block "B1" .}} block-B1 {{end}}
+
+12. 函数调用
+{{inc 1}}
+{{asc 65}}
+{{call .VarFunc 1}}
 
 参考文档：https://www.cnblogs.com/CxAgoni/p/17962581
