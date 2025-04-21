@@ -19,6 +19,8 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <type_traits>
+
 
 /* auto变量不能用于函数参数 */
 /* auto 和 decltype 在模板上的应用十分广泛，可用于简化代码 */
@@ -62,6 +64,12 @@ int main(int argc, char *argv[])
 	for (decltype(s2.begin()) it = s2.begin(); it!=s2.end(); ++it) {
 		std::cout << *it << std::endl;
 	}
+
+	// decltype的CV(const & volatile)限定符的推导
+	// 推导规则：被括号()包围，会变成引用类型
+	const int i = 0;
+	std::cout << "decltype(i) is const int ? " << std::boolalpha << std::is_same<decltype(i), const int>::value << std::endl;
+	std::cout << "decltype((i)) is const int& ? " << std::boolalpha << std::is_same<decltype((i)), const int&>::value << std::endl;
 
 	return EXIT_SUCCESS;
 }				// ----------  end of function main  ----------
