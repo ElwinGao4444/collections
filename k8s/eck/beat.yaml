@@ -16,6 +16,9 @@ spec:
       paths:
       - /var/log/containers/demo-app-*.log
       tags: ["demo-app"]
+      fields:
+        app_id: demo-app
+      fields_under_root: true
   daemonSet:
     podTemplate:
       spec:
