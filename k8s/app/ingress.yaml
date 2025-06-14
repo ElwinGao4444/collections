@@ -3,9 +3,9 @@ kind: Ingress
 metadata:
   name: nginx-ingress
   annotations:
-    kubernetes.io/ingress.class: nginx  # 指定ingress-controller，也可以在spec中通过ingressClassName指定
     nginx.ingress.kubernetes.io/rewrite-target: /$2 # 重写路径，将/gateway和/agent重写为/
 spec:
+  ingressClassName: nginx
   rules:
   - host: localhost
     http:
