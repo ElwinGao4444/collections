@@ -1,13 +1,17 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: kibana-ui
+  name: kibana-ingress
   annotations:
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS" # 使用https协议
 spec:
   ingressClassName: nginx
+  tls:
+  - hosts:
+    - kibana.local
+    secretName: quickstart-kb-http-certs-public
   rules:
-  - host: localhost
+  - host: kibana.local  # 在/etc/hosts中添加kibana域名
     http:
       paths:
       - path: /
@@ -17,3 +21,47 @@ spec:
             name: quickstart-kb-http
             port:
               number: 5601
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false" # 不重定向到https
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: grafana.local  # 在/etc/hosts中添加grafana域名
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-grafana
+            port:
+              number: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: elasticsearch-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS" # 使用https协议
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - elasticsearch.local
+    secretName: quickstart-es-http-certs-public
+  rules:
+  - host: elasticsearch.local  # 在/etc/hosts中添加elasticsearch域名
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: quickstart-es-http
+            port:
+              number: 9200
