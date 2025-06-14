@@ -6,10 +6,6 @@ metadata:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
 spec:
   ingressClassName: nginx
-  tls:
-  - hosts:
-      - localhost
-    secretName: quickstart-kb-http-ca-public
   rules:
   - host: localhost
     http:
