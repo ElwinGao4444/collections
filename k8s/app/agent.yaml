@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-agent
+  labels:
+    app: app-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-agent
+  template:
+    metadata:
+      labels:
+        app: app-agent
+    spec:
+      containers:
+      - name: app-agent
+        image: app-agent:latest
+        imagePullPolicy: IfNotPresent
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-agent
+spec:
+  selector:
+    app: app-agent
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP

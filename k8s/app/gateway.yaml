@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-gateway
+  labels:
+    app: app-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-gateway
+  template:
+    metadata:
+      labels:
+        app: app-gateway
+    spec:
+      containers:
+      - name: app-gateway
+        image: app-gateway:latest
+        imagePullPolicy: IfNotPresent
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-gateway
+spec:
+  selector:
+    app: app-gateway
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
