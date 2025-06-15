@@ -1,7 +1,8 @@
 FROM golang
 
 WORKDIR /app
-COPY gateway.go .
+COPY go.mod gateway.go .
+RUN go mod tidy
 RUN go build gateway.go
 
 ENTRYPOINT ["./gateway"]

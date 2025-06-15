@@ -18,6 +18,15 @@ spec:
       - name: app-gateway
         image: app-gateway:latest
         imagePullPolicy: IfNotPresent
+        envFrom:  # 从configMap中获取环境变量（整体获取）
+        - configMapRef:
+            name: app-config
+        env:
+        - name: redis_pass
+          valueFrom:
+            secretKeyRef: # 从secret中获取环境变量（单个获取）
+              name: app-secret
+              key: redis_pass
 ---
 apiVersion: v1
 kind: Service
@@ -31,3 +40,18 @@ spec:
       port: 8080
       targetPort: 8080
   type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  redis_host: app-redis
+  redis_port: "6379"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+data:
+  redis_pass: MTIzNDU2 # base64(123456)
